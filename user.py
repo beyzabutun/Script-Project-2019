@@ -1,10 +1,11 @@
-class user():
 
-    def __init__(self):
-        pass
+class User():
 
-    def constructor(self, email, name, surname, password):
-        pass
+    def __init__(self, email, name, surname, password):
+        self.email = email
+        self.name = name
+        self.surname = surname
+        self.password = password
 
     @staticmethod
     def verify(self, email, verification_number):
