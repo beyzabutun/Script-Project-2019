@@ -10,10 +10,10 @@ class user():
     def verify(self, email, verification_number):
         pass
 
-    def changepassword(self, newpassword, oldpassword = None):
+    def changepassword(self, new_password, old_password = None):
         pass
 
-    def lookup(self, emaillist):
+    def lookup(self, email_list):
         pass
 
     def friend(self, email):
@@ -25,6 +25,6 @@ class user():
     def listitems(self, user):
         pass
 
-    def watch(self, user, watchmethod):
+    def watch(self, user, watch_method):
         pass
 
