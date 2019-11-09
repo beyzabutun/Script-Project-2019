@@ -75,6 +75,7 @@ class DBConnection:
         cur.execute(f'INSERT INTO {table_name} VALUES {"?,"*len(data)}', data)
         self.connection.commit()
 
+
     def update(self, table_name, updated_mem, filtered_mem, *data ):
         cur = self.connection.cursor()
         cur.execute(

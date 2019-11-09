@@ -58,7 +58,6 @@ class Item:
         pass
 
     def get_rating(self):
-
         pass
 
     def locate(self, location):
