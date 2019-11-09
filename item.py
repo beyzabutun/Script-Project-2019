@@ -1,16 +1,44 @@
+# from isbntools.app import *
+from isbnlib import meta, is_isbn10, is_isbn13, _exceptions
 
-class Item():
 
-    def __init__(self, owner, item_type, title, uniqid, artist, genre, year):
+class Item:
+
+    db_conn = None
+
+    def __init__(self, owner, item_type=None, title=None, uniqid=None, artist=None, genre=None, year=None):
+        self.db_conn = self.db_conn.cursor()
+
         self.owner = owner
-        self.item_type = item_type
-        self.title = title
-        self.uniqid = uniqid
-        self.artist = artist
-        self.genre = genre
-        self.year = year
+        if uniqid is None:
+            self.item_type = item_type
+            self.title = title
+            self.uniqid = uniqid
+            self.artist = artist
+            self.genre = genre
+            self.year = year
+            self.rate = 0
+            self.location = None
+            # self.db_conn.execute('''insert into Items values (owner, type, title,
+            # uniqueid, artist, genre, year, location, rate)''', )
+
+        else:
+            metadata = None
+            try:
+                metadata = meta(isbn=uniqid)
+            except Exception as ex:
+                print(ex)
+            if metadata is not None:
+                self.title = metadata['title']
+                self.year = metadata['Year']
+                self.artist = metadata['Authors'][0]
+                self.item_type = item_type
+                self.genre = genre
+                self.rate = 0
+                self.location = None
 
     def borrowed_req(self, user):
+
         pass
 
     def borrowed_by(self, user, return_date=2):
@@ -26,9 +54,11 @@ class Item():
         pass
 
     def rate(self, user, rating):
+        self.rate += 1
         pass
 
     def get_rating(self):
+
         pass
 
     def locate(self, location):

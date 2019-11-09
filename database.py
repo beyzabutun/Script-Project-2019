@@ -1,9 +1,29 @@
 import sqlite3
 
+
 class DBConnection:
 
-    def __init__(self, path = './data.db'):
+    def __init__(self, path='./data.db'):
         self.connection = sqlite3.connect(path)
+        self.curs = self.connection.cursor()
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Users(" +
+                          "id integer PRIMARY KEY," +
+                          "name char[50]," +
+                          "surname char[50]," +
+                          "email char[256]," +
+                          "password char[256]);")
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Items(" +
+                          "id integer PRIMARY KEY," +
+                          "owner integer," +
+                          "type char[150]," +
+                          "title char[256]," +
+                          "uniqueid integer UNIQUE" +
+                          "artist char[256]," +
+                          "genre char[150]," +
+                          "year integer," +
+                          "location char[256]," +
+                          "rate integer" +
+                          ");")
 
     def insert(self, table_name, *data):
         cur = self.connection.cursor()
