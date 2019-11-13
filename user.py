@@ -11,7 +11,6 @@ class User():
 
     db_conn = db.DBConnection()
 
-
     def __init__(self, name, surname, email, password):
         assert self.db_conn
         self.cur = self.db_conn.curs
@@ -20,7 +19,7 @@ class User():
         self.email = email
         self.password = password
 
-        self.db_conn.insert("Users", None, name, surname, email, password)
+        self.db_conn.insert("Users", ('name', 'surname', 'email', 'password'), name, surname, email, password)
         user = self.cur.execute('select u.id from Users u where u.email = \'{uemail}\''.format(uemail=self.email))
         id = user.fetchone()
         self.id = id[0]
@@ -53,7 +52,7 @@ class User():
 
         user2 = self.cur.execute('select u.id from Users u where u.email like \'{uemail}\''.format(uemail=email))
         user2_id = user2.fetchone()
-        self.db_conn.insert("Friends", self.id, int(user2_id[0]), self.STATE_TYPE[0][0], 0)
+        self.db_conn.insert("Friends", ('sender_user', 'receiver_user', 'state', 'is_verified'), self.id, int(user2_id[0]), self.STATE_TYPE[1][0], 0)
         self.db_conn.connection.commit()
 
     def set_friend(self, user, state):

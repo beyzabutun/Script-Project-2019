@@ -9,7 +9,7 @@ class DBConnection:
         self.curs.execute("DROP TABLE IF EXISTS Users;")
         self.curs.execute("DROP TABLE IF EXISTS Items;")
         self.curs.execute("DROP TABLE IF EXISTS Borrows;")
-        self.curs.execute("CREATE TABLE IF NOT EXISTS Users("
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Users(" +
                           "id integer PRIMARY KEY AUTOINCREMENT," +
                           "name char(50)," +
                           "surname char(50)," +
@@ -26,40 +26,43 @@ class DBConnection:
                           "genre char(150)," +
                           "year integer," +
                           "location char(256)," +
-                          "rate integer,"
-                          "FOREIGN KEY (owner) REFERENCES Users(id)" +
-                          ");")
-        self.curs.execute("CREATE TABLE IF NOT EXISTS Friends(" +
-                          "user_id1 integer," +
-                          "user_id2  integer," +
-                          "state integer ," +
-                          "is_verified integer," +
-                          "PRIMARY KEY(user_id1, user_id2)," +
-                          "FOREIGN KEY (user_id1) REFERENCES Users(id)," +
-                          "FOREIGN KEY (user_id2) REFERENCES Users(id)" +
-                          ");")
-        self.curs.execute("CREATE TABLE IF NOT EXISTS Comments(" +
-                          "id integer PRIMARY KEY AUTOINCREMENT," +
-                          "user_id  integer," +
-                          "item_id integer ," +
-                          "FOREIGN KEY (user_id) REFERENCES Users(id)," +
-                          "FOREIGN KEY (item_id) REFERENCES Items(id)" +
-                          ");")
-        self.curs.execute("CREATE TABLE IF NOT EXISTS StateItem(" +
-                          "item_id integer PRIMARY KEY," +
                           "view integer ," +
                           "detail integer ," +
                           "borrow integer ," +
                           "comment integer ," +
                           "search integer ," +
+                          "FOREIGN KEY (owner) REFERENCES Users(id)" +
+                          ");")
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Friends(" +
+                          "sender_user integer," +
+                          "receiver_user integer," +
+                          "state integer ," +
+                          "is_verified integer," +
+                          "PRIMARY KEY(sender_user, receiver_user)," +
+                          "FOREIGN KEY (sender_user) REFERENCES Users(id)," +
+                          "FOREIGN KEY (receiver_user) REFERENCES Users(id)" +
+                          ");")
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Comments(" +
+                          "id integer PRIMARY KEY AUTOINCREMENT," +
+                          "user_id  integer," +
+                          "item_id integer ," +
+                          "comment text," +
+                          "date text," +
+                          "FOREIGN KEY (user_id) REFERENCES Users(id)," +
                           "FOREIGN KEY (item_id) REFERENCES Items(id)" +
                           ");")
-        self.curs.execute("CREATE TABLE IF NOT EXISTS Requests(" +
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Announcements(" +
                           "id integer PRIMARY KEY AUTOINCREMENT," +
+                          "item_id integer ," +
+                          "friend_state integer ," +
+                          "msg text, " +
+                          "FOREIGN KEY (item_id) REFERENCES Items(id)" +
+                          ");")
+        self.curs.execute("CREATE TABLE IF NOT EXISTS WatchRequests(" +
                           "user_id integer," +
                           "item_id integer ," +
-                          "request_datetime text ," +
-                          "type integer," +
+                          "type integer ," +
+                          "PRIMARY KEY(user_id, item_id, type)" +
                           "FOREIGN KEY (user_id) REFERENCES Users(id)," +
                           "FOREIGN KEY (item_id) REFERENCES Items(id)" +
                           ");")
@@ -69,16 +72,24 @@ class DBConnection:
                           "item_id integer ," +
                           "taking_date text," +
                           "return_date text," +
+                          "rate text," +
                           "is_returned integer," +
+                          "FOREIGN KEY (user_id) REFERENCES Users(id)," +
+                          "FOREIGN KEY (item_id) REFERENCES Items(id)" +
+                          ");")
+        self.curs.execute("CREATE TABLE IF NOT EXISTS BorrowRequests(" +
+                          "user_id integer," +
+                          "item_id integer ," +
+                          "request_date text," +
+                          "PRIMARY KEY(user_id, item_id)," +
                           "FOREIGN KEY (user_id) REFERENCES Users(id)," +
                           "FOREIGN KEY (item_id) REFERENCES Items(id)" +
                           ");")
         self.connection.commit()
 
-    def insert(self, table_name, *data):
+    def insert(self, table_name, field_names, *data):
         cur = self.connection.cursor()
-        print(data)
-        f_string = f'INSERT INTO {table_name} VALUES ( {"?,"*(len(data)-1) + "?"} )'
+        f_string = f'INSERT INTO {table_name} {field_names} VALUES ( {"?,"*(len(data)-1) + "?"} )'
         cur.execute(f_string, data)
         self.connection.commit()
 
@@ -91,6 +102,6 @@ class DBConnection:
 
 
 #
-# db = DBConnection()
-# db.insert("Users", None, "beste", "burhan", "email", "password")
+db = DBConnection()
+db.insert("Users", ('name', 'surname', 'email', 'password'), "beste", "burhan", "email", "password")
 # db.update("Users", "name", "name", "beste", "beste")
