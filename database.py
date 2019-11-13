@@ -14,7 +14,9 @@ class DBConnection:
                           "name char(50)," +
                           "surname char(50)," +
                           "email char(256) UNIQUE," +
-                          "password char(256)" +
+                          "password char(256)," +
+                          "is_verified integer," +
+                          "verification_number char(50)" +
                           ");")
         self.curs.execute("CREATE TABLE IF NOT EXISTS Items(" +
                           "id integer PRIMARY KEY AUTOINCREMENT," +
@@ -37,7 +39,6 @@ class DBConnection:
                           "sender_user integer," +
                           "receiver_user integer," +
                           "state integer ," +
-                          "is_verified integer," +
                           "PRIMARY KEY(sender_user, receiver_user)," +
                           "FOREIGN KEY (sender_user) REFERENCES Users(id)," +
                           "FOREIGN KEY (receiver_user) REFERENCES Users(id)" +
@@ -59,11 +60,13 @@ class DBConnection:
                           "FOREIGN KEY (item_id) REFERENCES Items(id)" +
                           ");")
         self.curs.execute("CREATE TABLE IF NOT EXISTS WatchRequests(" +
+                          "id integer PRIMARY KEY AUTOINCREMENT," +
                           "user_id integer," +
                           "item_id integer ," +
-                          "type integer ," +
-                          "PRIMARY KEY(user_id, item_id, type)" +
+                          "watch_method integer ," +
+                          "followed_id integer," +
                           "FOREIGN KEY (user_id) REFERENCES Users(id)," +
+                          "FOREIGN KEY (followed_id) REFERENCES Users(id), " +
                           "FOREIGN KEY (item_id) REFERENCES Items(id)" +
                           ");")
         self.curs.execute("CREATE TABLE IF NOT EXISTS Borrows(" +
@@ -87,6 +90,9 @@ class DBConnection:
                           ");")
         self.connection.commit()
 
+    def get_cursor(self):
+        return self.connection.cursor()
+
     def insert(self, table_name, field_names, *data):
         cur = self.connection.cursor()
         f_string = f'INSERT INTO {table_name} {field_names} VALUES ( {"?,"*(len(data)-1) + "?"} )'
@@ -103,5 +109,5 @@ class DBConnection:
 
 #
 db = DBConnection()
-db.insert("Users", ('name', 'surname', 'email', 'password'), "beste", "burhan", "email", "password")
+#db.insert("Users", ('name', 'surname', 'email', 'password'), "beste", "burhan", "email", "password")
 # db.update("Users", "name", "name", "beste", "beste")
