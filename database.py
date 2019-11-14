@@ -95,7 +95,8 @@ class DBConnection:
 
     def insert(self, table_name, field_names, *data):
         cur = self.connection.cursor()
-        f_string = f'INSERT INTO {table_name} {field_names} VALUES ( {"?,"*(len(data)-1) + "?"} )'
+        f_string = f'INSERT INTO {table_name} {field_names} VALUES ( {",".join(["?"]*len(data))})'
+
         cur.execute(f_string, data)
         self.connection.commit()
 
