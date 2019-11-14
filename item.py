@@ -1,7 +1,5 @@
 # from isbntools.app import *
-from isbnlib import meta, is_isbn10, is_isbn13, _exceptions
-import sqlite3
-# import user as _u
+from isbnlib import meta
 from datetime import datetime, timedelta
 from database import db
 
@@ -36,13 +34,19 @@ class Item:
         self.item_type = item_type
         self.genre = genre
         self.location = None
+        self.view = 2
+        self.borrow = 2
+        self.detail = 2
+        self.comment = 2
+        self.search = 2
         if uniqid is None:
             self.title = title
             self.uniqid = uniqid
             self.artist = artist
             self.year = year
-            db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year'), user_id,
-                      item_type, title, uniqid, artist, genre, year)
+            db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
+                                'detail', 'search', 'borrow', 'comment'), user_id, item_type, title,
+                      uniqid, artist, genre, year, 2, 2, 2, 2, 2)
             self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
         else:
             metadata = None
@@ -64,17 +68,22 @@ class Item:
         fetched_users = self.cur.execute(
             'select user_id from BorrowRequests where item_id={item} order by datetime(request_date)  ;'
                 .format(item=self.id)).fetchall()
-        print(fetched_users)
-        return fetched_users
+        result = []
+        for user in fetched_users:
+            result.append(user[0])
+        return result
 
     def borrowed_by(self, user, return_date=2):
         taking_date = datetime.now()
         return_date = taking_date + timedelta(weeks=return_date)
-        db.insert("Borrows", ('user_id', 'item_id', 'taking_date', 'return_date', 'is_returned'), user.id,
-                  self.id, datetime.now(), return_date, 0)
-        self.cur.execute('delete from BorrowRequests where user_id={user} and item_id={item} ;'
-                         .format(user=user.id, item=self.id ))
-        db.connection.commit()
+        try:
+            self.cur.execute(f"select id from Borrows where is_returned=0 and item_id={'?'}", [self.id]).fetchone()[0]
+        except:
+            db.insert("Borrows", ('user_id', 'item_id', 'taking_date', 'return_date', 'is_returned'), user.id,
+                      self.id, datetime.now(), return_date, 0)
+            self.cur.execute('delete from BorrowRequests where user_id={user} and item_id={item} ;'
+                             .format(user=user.id, item=self.id ))
+            db.connection.commit()
 
     def returned(self, location=None):
         self.cur.execute("update Borrows set is_returned=1 where is_returned=0 and item_id={id};".format(id=self.id))
@@ -86,7 +95,18 @@ class Item:
         db.connection.commit()
 
     def comment(self, user, comment_text):
-        db.insert("Comments", ('user_id', 'item_id', 'comment', 'date'), user.id, self.id, comment_text, datetime.now())
+        try:
+            friend_state = self.cur.execute(
+                "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
+                    .format(self_id=self.owner, user_id=user.id)).fetchone()[0]
+        except:
+            friend_state = 0
+        comment = self.cur.execute(
+                "select comment from Items where id={item}"
+                .format(item = self.id)).fetchone()[0]
+        if (comment >= friend_state >= 0) or (friend_state is 0 and comment is 3):
+            db.insert("Comments", ('user_id', 'item_id', 'comment', 'date'), user.id, self.id, comment_text, datetime.now())
+
         # TODO:
         # send notification to users who watches the item to watch
 
@@ -94,7 +114,6 @@ class Item:
         fetched_comments = self.cur.execute(
             'select user_id, comment from Comments where item_id={item} order by datetime(date);'
                 .format(item=self.id)).fetchall()
-        print(fetched_comments)
         return fetched_comments
 
     def rate(self, user, rating):
@@ -107,7 +126,6 @@ class Item:
         avg_rating = self.cur.execute(
             'select avg(rate) from Borrows where item_id={item} and rate is not null;'
                 .format(item=self.id)).fetchone()[0]
-        print(avg_rating)
         return avg_rating
 
     def locate(self, location):
@@ -127,8 +145,6 @@ class Item:
         words_text = list(search_text.split(" "))
         # in sqlite default like statement is case insensitive already
         if year:
-            dt = datetime(year=year, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-            print(dt)
             if for_borrow:
                 f_string = f'SELECT owner, id ' + \
                            f'FROM Items WHERE ' + \
@@ -138,7 +154,7 @@ class Item:
                            f'and (({" or ".join(["artist like ?"] * len(words_text))}) or ' + \
                            f'({" or ".join(["title like ?"] * len(words_text))})) and datetime(year)>={"?"} '+\
                            f'and genre like ? ;'
-                data = [user.id]*2 + words_text + words_text + [dt] + [genre]
+                data = [user.id]*2 + words_text + words_text + [year] + [genre]
                 list_user_item = db_cur.execute(f_string, data).fetchall()
             else:
                 f_string = f'SELECT owner, id ' + \
@@ -146,7 +162,7 @@ class Item:
                            f'(({" or ".join(["artist like ?"] * len(words_text))}) or ' + \
                            f'({" or ".join(["title like ?"] * len(words_text))})) and ' + \
                            f'datetime(year)>={"?"} and genre like ? ;'
-                data = words_text + words_text + [dt] + [genre]
+                data = words_text + words_text + [year] + [genre]
                 list_user_item = db_cur.execute(f_string, data).fetchall()
         else:
             if for_borrow:
@@ -158,9 +174,7 @@ class Item:
                            f'and (({" or ".join(["artist like ?"] * len(words_text))}) or ' +\
                            f'({" or ".join(["title like ?"] * len(words_text))})) and genre like ? ;'
                 # arkadaş değiller ama ödünç alma herkese açık
-                print(f_string)
                 data = [user.id]*2 + words_text + words_text + [genre]
-                print(data)
                 list_user_item = db_cur.execute(f_string, data).fetchall()
             else:
                 f_string = f'SELECT owner, id' + \
@@ -170,7 +184,6 @@ class Item:
                            f'genre like ? ;'
                 data = words_text + words_text + [genre]
                 list_user_item = db_cur.execute(f_string, data).fetchall()
-        print(list_user_item)
         return list_user_item
 
     def watch(self, user, watch_method):
@@ -222,6 +235,10 @@ class Item:
     def delete(self):
         self.cur.execute("delete from Items where id = {item_id}".format(item_id=self.id))
         db.connection.commit()
+
+    def __repr__(self):
+        return self.title
+
 #
 #
 # user = _u.User("beste", "burhan", "beste.com", "password")

@@ -1,8 +1,8 @@
 #import database as db
 from database import db
 import string
-import math, random
 from random import *
+
 
 class User():
 
@@ -92,9 +92,11 @@ class User():
         db.connection.commit()
 
     def list_items(self, user):
-        friend_state = self.cur.execute("select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
-                                        .format(self_id=self.id, user_id=user.id))
-        friend_state = friend_state.fetchone()[0]
+        try:
+            friend_state = self.cur.execute("select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
+                                            .format(self_id=self.id, user_id=user.id)).fetchone()[0]
+        except:
+            friend_state = 0
         if friend_state == 0:
             item_list = self.cur.execute("select i.id from Items i where i.owner = {user_id} and i.view = {state_type}"
                                         .format(user_id=user.id, state_type=friend_state))
@@ -111,13 +113,16 @@ class User():
     def watch(self, user, watch_method):
         friend_state = self.cur.execute(
             "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
-            .format(self_id=self.id, user_id=user.id))
-        friend_state = friend_state.fetchone()[0]
+            .format(self_id=self.id, user_id=user.id)).fetchone()[0]
+
         if watch_method == None:
             self.cur.execute("delete from WatchRequests where user_id = {user_id} and followed_id = {followed_id}"
                              .format(user_id = self.id, followed_id = user.id))
-        if friend_state >= 1:
+        if friend_state >= 1 :
             db.insert("WatchRequests", ("user_id", "watch_method", "followed_id"), self.id, self.REQUEST_TYPES["USER"], user.id)
+
+    def __repr__(self):
+        return self.name + " " + self.surname
 
 
 

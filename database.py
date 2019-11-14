@@ -7,8 +7,13 @@ class DBConnection:
         self.connection = sqlite3.connect(path)
         self.curs = self.connection.cursor()
         self.curs.execute("DROP TABLE IF EXISTS Users;")
-        self.curs.execute("DROP TABLE IF EXISTS Items;")
-        self.curs.execute("DROP TABLE IF EXISTS Borrows;")
+        self.curs.execute('DROP TABLE IF EXISTS Items;')
+        self.curs.execute('DROP TABLE IF EXISTS BorrowRequests;')
+        self.curs.execute('DROP TABLE IF EXISTS WatchRequests;')
+        self.curs.execute('DROP TABLE IF EXISTS Announcements;')
+        self.curs.execute('DROP TABLE IF EXISTS Friends;')
+        self.curs.execute('DROP TABLE IF EXISTS Comments;')
+        self.curs.execute('DROP TABLE IF EXISTS Borrows;')
         self.curs.execute("CREATE TABLE IF NOT EXISTS Users(" +
                           "id integer PRIMARY KEY AUTOINCREMENT," +
                           "name char(50)," +
@@ -108,7 +113,5 @@ class DBConnection:
         self.connection.commit()
 
 
-#
+
 db = DBConnection()
-#db.insert("Users", ('name', 'surname', 'email', 'password'), "beste", "burhan", "email", "password")
-# db.update("Users", "name", "name", "beste", "beste")
