@@ -94,7 +94,7 @@ class Item:
         # delete watchrequest after notification
         db.connection.commit()
 
-    def comment(self, user, comment_text):
+    def _comment(self, user, comment_text):
         try:
             friend_state = self.cur.execute(
                 "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
@@ -104,6 +104,7 @@ class Item:
         comment = self.cur.execute(
                 "select comment from Items where id={item}"
                 .format(item = self.id)).fetchone()[0]
+
         if (comment >= friend_state >= 0) or (friend_state is 0 and comment is 3):
             db.insert("Comments", ('user_id', 'item_id', 'comment', 'date'), user.id, self.id, comment_text, datetime.now())
 
