@@ -229,21 +229,19 @@ class Item:
         words_text = list(search_text.split(" "))
         words = []
         for i in words_text:
-            words.append("\'%" + i + "%\'")
-        print(words)
+            words.append("%" + i + "%")
         # in sqlite default like statement is case insensitive already
         if year:
             if for_borrow:
                 f_string = f'SELECT owner, id ' + \
                            f'FROM Items WHERE ' + \
                            f'borrow!=0 and (borrow=3 or (owner in ' + \
-                           f'(SELECT sender_user from Friends where receiver_user=? and Items.borrow>=state)  or ' + \
-                           f'owner in (SELECT receiver_user from Friends where sender_user=? and Items.borrow>=state))) ' + \
+                           f'(SELECT sender_user from Friends where receiver_user={"?"}  and Items.borrow>=state)  or ' + \
+                           f'owner in (SELECT receiver_user from Friends where sender_user={"?"}  and Items.borrow>=state))) ' + \
                            f'and (({" or ".join(["artist like ?"] * len(words_text))}) or ' + \
                            f'({" or ".join(["title like ?"] * len(words_text))})) and datetime(year)>={"?"} '+\
-                           f'and genre = \'%?%\' ;'
-                data = [user.id]*2 + words + words + [year] + [genre]
-                print(f_string, data)
+                           f'and genre = {"?"} ;'
+                data = [user.id]*2 + words + words + [year] + [ genre]
                 list_user_item = db_cur.execute(f_string, data).fetchall()
 
             else:
@@ -252,33 +250,28 @@ class Item:
                            f'FROM Items WHERE ' + \
                            f'(({" or ".join(["artist like ?"] * len(words))}) or ' + \
                            f'({" or ".join(["artist like ?"] * len(words))})) and ' + \
-                           f'datetime(year)>={"?"} and genre like \'%?%\' ;'
+                           f'datetime(year)>={"?"} and genre = {"?"} ;'
                 data = words + words + [year] + [genre]
-                print(f_string, data)
                 list_user_item = db_cur.execute(f_string, data).fetchall()
-                print(list_user_item)
         else:
             if for_borrow:
                 f_string = f'SELECT owner, id ' + \
                            f'FROM Items WHERE ' + \
-                           f'borrow!=0 and (borrow=3 or '+ \
-                           f'(owner in (SELECT sender_user from Friends where receiver_user=? and Items.borrow>=state) or ' +\
-                           f'owner in (SELECT receiver_user from Friends where sender_user=? and Items.borrow>=state))) ' +\
+                           f'borrow!=0 and (borrow=3 or ' + \
+                           f'(owner in (SELECT sender_user from Friends where receiver_user={"?"} and Items.borrow>=state) or ' +\
+                           f'owner in (SELECT receiver_user from Friends where sender_user={"?"}  and Items.borrow>=state))) ' +\
                            f'and (({" or ".join(["artist like ?"] * len(words_text))}) or ' +\
-                           f'({" or ".join(["title like ?"] * len(words_text))})) and genre like \'%?%\' ;'
+                           f'({" or ".join(["title like ?"] * len(words_text))})) and genre = {"?"} ;'
                 # arkadaş değiller ama ödünç alma herkese açık
                 data = [user.id]*2 + words + words + [genre]
-                print(f_string, data)
                 list_user_item = db_cur.execute(f_string, data).fetchall()
             else:
-                f_string = f'SELECT owner, id' + \
+                f_string = f'SELECT  owner, id  ' + \
                            f'FROM Items WHERE ' + \
-                           f'(({" or ".join(["artist like ?"] * len(words_text))}) or ' + \
-                           f'({" or ".join(["title like ?"] * len(words_text))})) and ' + \
-                           f'genre like \'%?%\' ;'
+                           f'(({" or ".join(["artist like ?"] * len(words))}) or ' + \
+                           f'({" or ".join(["title like ?"] * len(words))})) and ' + \
+                           f'genre = {"?"} ;'
                 data = words + words + [genre]
-
-                print(f_string,data)
                 list_user_item = db_cur.execute(f_string, data).fetchall()
         return list_user_item
 
@@ -338,31 +331,3 @@ class Item:
     def __repr__(self):
         return self.title
 
-#
-#
-# user = _u.User("beste", "burhan", "beste.com", "password")
-# user2 = _u.User("beste", "burhan", "bestee.com", "password")
-# user3 = _u.User("beste", "burhan", "besteee.com", "password")
-# user.friend("bestee.com")
-# user2.friend("besteee.com")
-# user.set_friend(user2, "CLOSEFRIEND")
-# # user2.set_friend(user3, "FRIEND")
-# it = Item(user, "type", "title", None, "artist", "genre", 1996)
-# it2 = Item(user2, "type", "title", None, "artist", "genre", 1996)
-# it3 = Item(user3, "type", "title", None, "artist", "genre", 1996)
-# it4 = Item(user, "type", "title", None, "artist", "genre", 1996)
-# it4.borrowed_req(user)
-# it3.borrowed_by(user)
-# it3.returned('lol')
-# it4.locate('lololo')
-# it2.setstate('view', 'EVERYONE')
-# it3.setstate('borrow', 'CLOSED')
-# it2.setstate('borrow', 'CLOSED')
-# it4.setstate('borrow', 'CLOSED')
-# it.setstate('borrow', 'CLOSED')
-# it3.comment(user, "harikaaaaa")
-# it3.comment(user, "harikaaaaaaaaa")
-# it3.list_comments()
-# it4.rate(user, 5)
-# it3.get_rating()
-# it3.search(user, "title", "genre", None, True)

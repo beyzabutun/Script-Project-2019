@@ -144,16 +144,3 @@ class User:
     def __repr__(self):
         return self.name + " " + self.surname
 
-
-# user_obj = User("ahmet", "namik", "ahmetmetuedutr", "232552")
-# user_obj.watch()
-
-# user_obj2 = User("ahmet", "kemal", "kemal@metu.edu.tr", "232555552")
-# user_obj.friend("kemal@metu.edu.tr")
-# print(user_obj.look_up(("kemal@metu.edu.tr", "beyzaaa@mit.com", "beste@standord.com","ahmetmetuedutr")))
-# user_obj.set_friend(user_obj2, "CLOSEFRIEND")
-# print(user_obj.list_items(user_obj2))
-# user_obj2.change_password("sadad", None)
-# user_obj2.watch(user_obj, "USER")
-
-
