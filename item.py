@@ -75,12 +75,14 @@ class Item:
             # if there is a user who watches owner, send notification followed users
             try:
                 users_watching = self.cur.execute(
-                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner, wmethod=self.WATCH_REQUEST_TYPES["USER"])).fetchall()
+                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner.id, wmethod=self.WATCH_REQUEST_TYPES["USER"])).fetchall()
             except:
                 users_watching = []
-            for user in users_watching:
-                self.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                            owner.id, user.id, self.id,
+            if users_watching == []:
+                return
+            for user in users_watching[0]:
+                db.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
+                            owner.id, user, self.id,
                             "{owner} add new \'{item}\' item.".format(owner=owner, item=self),
                             datetime.now())
                 print("Receiver :  ", user, " Notification : ", "{owner} add new \'{item}\' item.".format(owner=owner, item=self))
@@ -126,18 +128,20 @@ class Item:
         db.connection.commit()
         try:
             users_watching = self.cur.execute(
-                "select user_id from WatchRequests where item_id={item} watch_method={wmethod}"
+                "select user_id from WatchRequests where item_id={item} and watch_method={wmethod}"
                     .format(item=self.id, wmethod=self.WATCH_REQUEST_TYPES["BORROW"])).fetchall()
             self.cur.execute(
-                "delete from WatchRequests where item_id={item} watch_method={wmethod}"
+                "delete from WatchRequests where item_id={item} and  watch_method={wmethod}"
                     .format(item=self.id, wmethod=self.WATCH_REQUEST_TYPES["BORROW"]))
             db.connection.commit()
         except:
             users_watching = []
-        for user in users_watching:
-            self.insert("Notifications",
+        if users_watching == []:
+            return
+        for user in users_watching[0]:
+            db.insert("Notifications",
                         ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                        self.owner.id, user.id, self.id,
+                        self.owner.id, user, self.id,
                         " \'{item}\' item is returned.".format(item=self),
                         datetime.now())
             print("Receiver :  ", user, " Notification : ", " \'{item}\' item is returned.".format(item=self))
@@ -146,7 +150,7 @@ class Item:
         try:
             friend_state = self.cur.execute(
                 "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
-                    .format(self_id=self.owner, user_id=user.id)).fetchone()[0]
+                    .format(self_id=self.owner.id, user_id=user.id)).fetchone()[0]
         except:
             friend_state = 0
         comment = self.cur.execute(
@@ -159,6 +163,7 @@ class Item:
             print("friend_state of {user} with owner of item: ".format(user=user), list(self.STATE.keys())[friend_state])
             print("comment permission for this item: ", list(self.STATE_TYPE.keys())[comment])
             print("{user} has no permission to comment for this item.".format(user=user))
+            return
 
         # TODO:
         # send notification to users who watches the item to watch
@@ -168,13 +173,15 @@ class Item:
                 "select user_id from WatchRequests where item_id={item} and watch_method={wmethod}".format(item=self.id, wmethod=self.WATCH_REQUEST_TYPES["COMMENT"])).fetchall()
         except:
             users_watching = []
-        for watcher in users_watching:
-            self.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                        user.id, watcher.id, self.id,
+        if users_watching==[]:
+            return
+        for watcher in users_watching[0]:
+            db.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
+                        user.id, watcher, self.id,
                         "{user} commented for \'{item}\' item.".format(user=user, item=self),
                         datetime.now())
             print("Receiver :", watcher,
-                  " Notification : ", "{user} commented for {owner} \'s \'{item}\' item.".format(owner=self.owner, user=user, item=self))
+                  " Notification : ", "{user} commented for {owner}\'s \'{item}\' item.".format(owner=self.owner, user=user, item=self))
 
     def list_comments(self):
         fetched_comments = self.cur.execute(
@@ -214,9 +221,11 @@ class Item:
                                                                                                                    "BORROW"])).fetchall()
             except:
                 users_watching = []
-            for watcher in users_watching:
-                self.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                            self.owner.id, watcher.id, self.id,
+            if users_watching==[]:
+                return
+            for watcher in users_watching[0]:
+                db.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
+                            self.owner.id, watcher, self.id,
                             "{user} changed borrow permission for \'{item}\' item to {state}.".format(user=self.owner, item=self, state=state),
                             datetime.now())
                 print("Receiver :", watcher,
@@ -276,47 +285,70 @@ class Item:
         return list_user_item
 
     def watch(self, user, watch_method):
-        db.insert('WatchRequests', ('user_id', 'item_id', 'watch_method'), user.id, self.id, watch_method)
+        db.insert('WatchRequests', ('user_id', 'item_id', 'watch_method'), user.id, self.id, self.WATCH_REQUEST_TYPES[watch_method])
 
-    def view(self, user):
+    def view_info(self, user):
+        # try:
+        #     friend_state = self.cur.execute(
+        #         "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
+        #             .format(self_id=self.owner, user_id=user.id)).fetchone()[0]
+        # except:
+        #     friend_state = 0
+        # print(friend_state)
+        # if friend_state == self.STATE["NOFRIEND"]:
+        #     sum_info = self.cur.execute(
+        #         "select i.type, i.title, i.artist, i.genre from Items i where i.view = {state}"
+        #         .format(state = 3)).fetchall()
+        # else:
+        #     sum_info = self.cur.execute(
+        #         "select i.type, i.title, i.artist, i.genre from Items i where i.view >= {state}"
+        #             .format(state=friend_state)).fetchall()
+        #
+        # return sum_info
         try:
             friend_state = self.cur.execute(
                 "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
-                    .format(self_id=self.owner, user_id=user.id)).fetchone()[0]
+                    .format(self_id=self.owner.id, user_id=user.id)).fetchone()[0]
         except:
             friend_state = 0
-        if friend_state == self.STATE["NOFRIEND"]:
-            sum_info = self.cur.execute(
-                "select i.type, i.title, i.artist, i.genre from Items i where i.view = {state}"
-                .format(state = 3)).fetchall()
-        else:
-            sum_info = self.cur.execute(
-                "select i.type, i.title, i.artist, i.genre from Items i where i.view >= {state}"
-                    .format(state=friend_state)).fetchall()
-        result = []
-        for info in sum_info:
-            result.append(info[0])
-        return result
+        view = self.cur.execute(
+                "select i.view from Items i where i.id={item}"
+                .format(item=self.id)).fetchone()[0]
 
-    def detail(self, user):
+        if (view >= friend_state and friend_state is not 0) or (view is 3):
+            sum_info = self.cur.execute(
+                     "select type, title, artist, genre from Items where id = {id}"
+                .format(id=self.id)).fetchall()
+            return sum_info
+
+        else:
+            print("friend_state of {user} with owner of item: ".format(user=user), list(self.STATE.keys())[friend_state])
+            print("view permission for this item: ", list(self.STATE_TYPE.keys())[view])
+            print("{user} has no permission to view summary information of this item.".format(user=user))
+
+
+    def detailed_info(self, user):
         try:
             friend_state = self.cur.execute(
                 "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
-                    .format(self_id=self.owner, user_id=user.id)).fetchone()[0]
+                    .format(self_id=self.owner.id, user_id=user.id)).fetchone()[0]
         except:
             friend_state = 0
-        if friend_state == self.STATE["NOFRIEND"]:
+        detail = self.cur.execute(
+                "select i.detail from Items i where i.id={item}"
+                .format(item=self.id)).fetchone()[0]
+
+        if (detail >= friend_state and friend_state is not 0) or (detail is 3):
             detailed_info = self.cur.execute(
-                "select * from Items i where i.detail = {state}"
-                    .format(state=3)).fetchall()
+                "select i.owner, i.type, i.title, i.artist, i.genre, i.year, i.location from Items i where i.id = {self_id}"
+                    .format(self_id=self.id)).fetchall()
+            return detailed_info
+
         else:
-            detailed_info = self.cur.execute(
-                "select * from Items i where i.detail >= {state}"
-                    .format(state=friend_state)).fetchall()
-        result = []
-        for info in detailed_info:
-            result.append(info[0])
-        return result
+            print("friend_state of {user} with owner of item: ".format(user=user), list(self.STATE.keys())[friend_state])
+            print("detail permission for this item: ", list(self.STATE_TYPE.keys())[detail])
+            print("{user} has no permission to view detailed information of this item.".format(user=user))
+
 
     def announce(self, owner_type, msg):
         db.insert("Announcements", ("item_id", "friend_type", "msg"), self.id, owner_type, msg)
