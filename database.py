@@ -14,6 +14,7 @@ class DBConnection:
         self.curs.execute('DROP TABLE IF EXISTS Friends;')
         self.curs.execute('DROP TABLE IF EXISTS Comments;')
         self.curs.execute('DROP TABLE IF EXISTS Borrows;')
+        self.curs.execute('DROP TABLE IF EXISTS Notifications;')
         self.curs.execute("CREATE TABLE IF NOT EXISTS Users(" +
                           "id integer PRIMARY KEY AUTOINCREMENT," +
                           "name char(50)," +
@@ -91,6 +92,17 @@ class DBConnection:
                           "request_date text," +
                           "PRIMARY KEY(user_id, item_id)," +
                           "FOREIGN KEY (user_id) REFERENCES Users(id)," +
+                          "FOREIGN KEY (item_id) REFERENCES Items(id)" +
+                          ");")
+        self.curs.execute("CREATE TABLE IF NOT EXISTS Notifications(" +
+                          "id integer PRIMARY KEY AUTOINCREMENT," +
+                          "sender integer," +
+                          "receiver integer," +
+                          "item_id integer ," +
+                          "notification_text text ," +
+                          "notification_date text," +
+                          "FOREIGN KEY (sender) REFERENCES Users(id)," +
+                          "FOREIGN KEY (receiver) REFERENCES Users(id)," +
                           "FOREIGN KEY (item_id) REFERENCES Items(id)" +
                           ");")
         self.connection.commit()
