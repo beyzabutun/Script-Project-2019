@@ -95,13 +95,17 @@ class Item:
             db.insert("BorrowRequests", ('user_id', 'item_id', 'request_date'), user.id, self.id, datetime.now())
         if already_requested is not None: # true
             print("{user} already requested for this item.".format(user=user))
-        fetched_users = self.cur.execute(
-            'select user_id from BorrowRequests where item_id={item} order by datetime(request_date)  ;'
-                .format(item=self.id)).fetchall()
-        result = []
-        for user in fetched_users:
-            result.append(user[0])
-        return result
+        # fetched_users = self.cur.execute(
+        #     'select user_id from BorrowRequests where item_id={item} order by datetime(request_date)  ;'
+        #         .format(item=self.id)).fetchall()
+        # result = []
+        # for user in fetched_users:
+        #     result.append(user[0])
+        # return result
+        queue = self.cur.execute("select count(*) from BorrowRequests where item_id={self_id}"
+                                 .format(self_id = self.id)).fetchone()[0]
+
+        print(user, "Your place in borrow request list: ", queue)
 
     def borrowed_by(self, user, return_date=2):
         taking_date = datetime.now()
