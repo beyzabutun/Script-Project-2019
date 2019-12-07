@@ -1,6 +1,5 @@
 from isbnlib import meta
 from datetime import datetime, timedelta
-from database import db
 
 
 class Item:

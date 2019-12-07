@@ -1,2 +1,3 @@
 __pycache__/
-data.db
+phase1/data.db
+phase2/data.db
