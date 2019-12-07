@@ -91,12 +91,12 @@ class Server:
             else:
                 func = cls.meta_data['item'][request_type[0]]
                 if request_type[0] != 'add_item':
+                    item_id = request_type[1]
+                    item = item.Item(database_obj, item_id)
                     msg = func(item, database_obj, request_type[1:])
                     msg = pickle.dumps(msg)
                 else:   # add item
                     msg = func(database_obj, request_type[1:])
-                    if msg[0] == '+':
-                        item = item.Item(database_obj, msg[1])
                     msg = pickle.dumps(msg)
 
             print(request_type[1:])

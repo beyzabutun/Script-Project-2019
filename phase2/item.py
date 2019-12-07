@@ -21,7 +21,7 @@ class Item:
         'EVERYONE': 3,
     }
 
-    def __init__(self, owner, item_type=None, title=None, uniqid=None, artist=None, genre=None, year=None):
+    def __init__(self, database_obj, item_id):
         is_verified = True
         try:
             is_verified = db.connection.cursor().execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[0]
