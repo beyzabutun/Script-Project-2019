@@ -14,8 +14,8 @@ from threading import Thread
 
 
 class Server:
-    request_port = 20454
-    notification_port = 19214
+    request_port = 21455
+    notification_port = 12510
     notification_waiting_clients = dict()
     notification_sock = socket(AF_INET, SOCK_STREAM)
 
@@ -23,6 +23,13 @@ class Server:
         'sign_up': user.User.sign_up,
         'login': user.User.login,
         'verify': user.User.verify,
+        'change_password': user.User.change_password,
+        'friend' : user.User.friend,
+        'set_friend' : user.User.set_friend,
+        'lookup': user.User.look_up,
+        'list_items': user.User.list_items,
+        'watch': user.User.watch
+
     }
 
     @classmethod
@@ -64,8 +71,6 @@ class Server:
             if request_type[0] not in cls.meta_data:
                 print('no req')
                 continue
-
-
 
             print(request_type)
             func = cls.meta_data[request_type[0]]

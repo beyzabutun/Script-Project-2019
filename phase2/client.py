@@ -5,10 +5,26 @@ import pickle
 
 
 class Client:
+    WATCH_REQUEST_TYPES = {
+        0: "COMMENT",
+        1: "BORROW",
+        2: "USER"
+    }
+    STATE = {
+        0: "NOFRIEND",
+        1: "CLOSEFRIEND",
+        2: "FRIEND"
+    }
+    STATE_TYPE = {
+        "CLOSED": 0,
+        "CLOSEFRIEND": 1,
+        "FRIEND": 2,
+        "EVERYONE": 3
+    }
     server_addr = '127.0.0.1'
 
-    request_port = 20454
-    notification_port = 19214
+    request_port = 21455
+    notification_port = 12510
     meta_data = None
     is_login = False
 
@@ -30,9 +46,73 @@ class Client:
             msg = pickle.loads(msg)
             if msg[0] == '+':
                 Client.meta_data = {
+                    'change password' : cls.request_handler,
+                    'friend' : cls.request_handler,
+                    'set friend': cls.request_handler,
+                    'lookup' : cls.request_handler,
+                    'list_items' : cls.request_handler,
+                    'watch': cls.request_handler
 
                 }
             print(msg[1])
+        elif request_type == 'change password':
+            old_password = input("Old Password (If you don't know your old password, skip it: ")
+            new_password = input("New Password: ")
+            if old_password == '':
+                old_password = None
+            params = ('change_password', new_password, old_password)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
+        elif request_type == "lookup":
+            email_list = input("Email List: ")
+            params = (request_type, email_list)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            if msg:
+                print(msg)
+        elif request_type == 'list_items':
+            email = input("which user's items would you like to see, Email:")
+            params = (request_type, email)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            if msg:
+                print(msg)
+        elif request_type == 'friend':
+            email = input("User's email who you want to send friendship request: ")
+            params = ('friend', email)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
+        elif request_type == 'set friend':
+            email = input("User's email whose you want to set friendship state: ")
+            state = input("NO FRIEND: 0, CLOSEFRIEND:1, FRIEND: 2  :")
+            params = ('set_friend', email, cls.STATE[int(state)])
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
+        elif request_type == 'watch':
+            email = input("User's email whose you want to watch: ")
+            state = input("COMMENT: 0, BORROW:1, USER: 2  :")
+            params = ('watch', email, cls.WATCH_REQUEST_TYPES[int(state)])
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
+
+
+
 
 
 
@@ -46,12 +126,12 @@ class Client:
         sock.send(user_id)
         while True:
             notification_msg = sock.recv(1024)
-            notification_msg = pickle.loads(notification_msg)
             if notification_msg == b'':
                 print('Server closed')
                 break
             if notification_msg == b'CLS':
                 break
+            notification_msg = pickle.loads(notification_msg)
             print(f'notification received: {notification_msg}')
 
     @classmethod
@@ -78,9 +158,21 @@ class Client:
                     notification_thread = Thread(target=cls.notification, args=(msg[1],))  # msh[0] is user_id
                     notification_thread.start()
                     cls.is_login = True
-                    cls.meta_data = {
-                        'verify': cls.request_handler,
-                    }
+                    if msg[-1] == 0:
+                        cls.meta_data = {
+                            'verify': cls.request_handler,
+                        }
+                    else:
+                        cls.meta_data = {
+                            'change password' : cls.request_handler,
+                            'friend' : cls.request_handler,
+                            'set friend': cls.request_handler,
+                            'lookup' : cls.request_handler,
+                            'list_items' : cls.request_handler,
+                            'watch': cls.request_handler
+
+                        }
+
             else:
                 print("there is an error")
 
