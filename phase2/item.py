@@ -86,7 +86,73 @@ class Item:
                             datetime.now())
                 print("Receiver :  ", user, " Notification : ", "{owner} add new \'{item}\' item.".format(owner=owner, item=self))
 
-    def borrowed_req(self, user):
+    def add_item(self, owner, item_type=None, title=None, uniqid=None, artist=None, genre=None, year=None):
+        is_verified = True
+        try:
+            is_verified = db.connection.cursor().execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[0]
+        except:
+            print("There is no such user.")
+        if not is_verified:
+            print("Owner is not verified, item can't be created!")
+            return
+        else:
+
+            self.cur = db.get_cursor()
+            user_id = self.cur.execute("select id from Users where email like \'{m}\'".format(m=owner.email))
+            user_id = user_id.fetchone()[0]
+            self.owner = owner
+            self.item_type = item_type
+            self.genre = genre
+            self.location = None
+            self.view = 2
+            self.borrow = 2
+            self.detail = 2
+            self.comment = 2
+            self.search = 2
+            self.uniqid = uniqid
+            if uniqid is None:
+                self.title = title
+                self.uniqid = uniqid
+                self.artist = artist
+                self.year = year
+                db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
+                                    'detail', 'search', 'borrow', 'comment'), user_id, item_type, title,
+                          uniqid, artist, genre, year, 2, 2, 2, 2, 2)
+                self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
+                print(self.id, self, ", item is created.")
+            else:
+                metadata = None
+                try:
+                    metadata = meta(isbn=uniqid)
+                except Exception as ex:
+                    print(ex)
+                if metadata is not None:
+                    self.title = metadata['Title']
+                    self.year = metadata['Year']
+                    self.artist = metadata['Authors'][0]
+                    db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
+                                    'detail', 'search', 'borrow', 'comment'), user_id,
+                              item_type, self.title, uniqid, self.artist, self.genre, self.year, 2, 2, 2, 2, 2)
+                    self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
+                    print(self.id, self, " item is created with isbn number : ", self.uniqid)
+
+            # if there is a user who watches owner, send notification followed users
+            try:
+                users_watching = self.cur.execute(
+                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner.id, wmethod=self.WATCH_REQUEST_TYPES["USER"])).fetchall()
+            except:
+                users_watching = []
+            if users_watching == []:
+                return
+            for user in users_watching[0]:
+                db.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
+                            owner.id, user, self.id,
+                            "{owner} add new \'{item}\' item.".format(owner=owner, item=self),
+                            datetime.now())
+                print("Receiver :  ", user, " Notification : ", "{owner} add new \'{item}\' item.".format(owner=owner, item=self))
+
+
+    def borrowed_req(self, database_obj, user):
         already_requested = None
         try:
             already_requested = self.cur.execute("select user_id from BorrowRequests where item_id={item} and user_id={user}".format(item=self.id, user=user.id)).fetchone()[0]

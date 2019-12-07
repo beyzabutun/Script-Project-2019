@@ -1,5 +1,4 @@
 from socket import socket, AF_INET, SOCK_STREAM
-from concurrent.futures import ThreadPoolExecutor as TPE
 from threading import Thread
 import pickle
 
@@ -110,12 +109,6 @@ class Client:
             msg = request_sock.recv(1024)
             msg = pickle.loads(msg)
             print(msg)
-
-
-
-
-
-
 
     @classmethod
     def notification(cls, user_id):

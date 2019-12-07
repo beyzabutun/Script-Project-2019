@@ -1,7 +1,5 @@
 import string
 from random import *
-from functools import wraps
-import database
 
 class User:
     WATCH_REQUEST_TYPES = {

@@ -20,15 +20,20 @@ class Server:
     notification_sock = socket(AF_INET, SOCK_STREAM)
 
     meta_data = {
-        'sign_up': user.User.sign_up,
-        'login': user.User.login,
-        'verify': user.User.verify,
-        'change_password': user.User.change_password,
-        'friend' : user.User.friend,
-        'set_friend' : user.User.set_friend,
-        'lookup': user.User.look_up,
-        'list_items': user.User.list_items,
-        'watch': user.User.watch
+        'user': {
+            'sign_up': user.User.sign_up,
+            'login': user.User.login,
+            'verify': user.User.verify,
+            'change_password': user.User.change_password,
+            'friend' : user.User.friend,
+            'set_friend' : user.User.set_friend,
+            'lookup': user.User.look_up,
+            'list_items': user.User.list_items,
+            'watch': user.User.watch
+        },
+        'item': {
+
+        }
 
     }
 
@@ -68,27 +73,35 @@ class Server:
             request_type = pickle.loads(request)
             print(request_type[0])
 
-            if request_type[0] not in cls.meta_data:
+            if request_type[0] not in cls.meta_data['user'] and request_type[0] not in cls.meta_data['item'] :
                 print('no req')
                 continue
 
             print(request_type)
-            func = cls.meta_data[request_type[0]]
-            print(request_type[1:])
-            if request_type[0] != 'login' and request_type[0] != 'sign_up':
-                msg = func(client, database_obj, request_type[1:])
-                msg = pickle.dumps(msg)
-                print("return from ", request_type[0], 'msg', msg)
-                request_sock.send(msg)
+            if request_type[0] in cls.meta_data['user']:
+                func = cls.meta_data['user'][request_type[0]]
+                if request_type[0] != 'login' and request_type[0] != 'sign_up':
+                    msg = func(client, database_obj, request_type[1:])
+                    msg = pickle.dumps(msg)
+                else:
+                    msg = func(database_obj, request_type[1:])
+                    if msg[0] == '+':
+                        client = user.User(database_obj, email=request_type[1], password=request_type[2])
+                    msg = pickle.dumps(msg)
             else:
-                msg = func(database_obj, request_type[1:])
-                if msg[0] == '+':
-                    client = user.User(database_obj, email=request_type[1], password=request_type[2])
-                msg = pickle.dumps(msg)
+                func = cls.meta_data['item'][request_type[0]]
+                if request_type[0] != 'add_item':
+                    msg = func(item, database_obj, request_type[1:])
+                    msg = pickle.dumps(msg)
+                else:   # add item
+                    msg = func(database_obj, request_type[1:])
+                    if msg[0] == '+':
+                        item = item.Item(database_obj, msg[1])
+                    msg = pickle.dumps(msg)
 
-
-                print("return from ", request_type[0], 'msg', msg)
-                request_sock.send(msg)
+            print(request_type[1:])
+            print("return from ", request_type[0], 'msg', msg)
+            request_sock.send(msg)
 
         db.close()
 
