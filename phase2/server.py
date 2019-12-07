@@ -32,7 +32,7 @@ class Server:
             'watch': user.User.watch
         },
         'item': {
-
+            'add_item': item.Item.add_item
         }
 
     }
@@ -93,10 +93,10 @@ class Server:
                 if request_type[0] != 'add_item':
                     item_id = request_type[1]
                     item = item.Item(database_obj, item_id)
-                    msg = func(item, database_obj, request_type[1:])
+                    msg = func(item, database_obj, request_type[2:])
                     msg = pickle.dumps(msg)
                 else:   # add item
-                    msg = func(database_obj, request_type[1:])
+                    msg = func(database_obj, client, request_type[1:])
                     msg = pickle.dumps(msg)
 
             print(request_type[1:])

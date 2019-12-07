@@ -50,7 +50,8 @@ class Client:
                     'set friend': cls.request_handler,
                     'lookup' : cls.request_handler,
                     'list_items' : cls.request_handler,
-                    'watch': cls.request_handler
+                    'watch': cls.request_handler,
+                    'add_item': cls.request_handler,
 
                 }
             print(msg[1])
@@ -109,6 +110,19 @@ class Client:
             msg = request_sock.recv(1024)
             msg = pickle.loads(msg)
             print(msg)
+        elif request_type == 'add_item':
+            item_type = input("Item Type: ")
+            title = input("Title: ")
+            uniqid = input("Isbn Number: ")
+            artist = input("Artist: ")
+            genre = input("Genre: ")
+            year = input("Year: ")
+            params = ('add_item', item_type, title, uniqid, artist, genre, year)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
 
     @classmethod
     def notification(cls, user_id):
@@ -162,7 +176,8 @@ class Client:
                             'set friend': cls.request_handler,
                             'lookup' : cls.request_handler,
                             'list_items' : cls.request_handler,
-                            'watch': cls.request_handler
+                            'watch': cls.request_handler,
+                            'add_item': cls.request_handler,
 
                         }
 

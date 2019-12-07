@@ -22,39 +22,54 @@ class Item:
     }
 
     def __init__(self, database_obj, item_id):
-        is_verified = True
-        try:
-            is_verified = db.connection.cursor().execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[0]
-        except:
-            print("There is no such user.")
-        if not is_verified:
-            print("Owner is not verified, item can't be created!")
-            return
-        else:
+        self.cur = database_obj.curs
+        item_query = self.cur.execute("select * from Items where id = {id}".format(id=item_id)).fetchone()
+        self.id = item_query[0]
+        self.owner = item_query[1]
+        self.type = item_query[2]
+        self.title = item_query[3]
+        self.uniqid = item_query[4]
+        self.artist = item_query[5]
+        self.genre = item_query[6]
+        self.year = item_query[7]
+        self.location = item_query[8]
+        self.view = item_query[9]
+        self.detail = item_query[10]
+        self.borrow = item_query[11]
+        self.comment = item_query[12]
+        self.search = item_query[13]
 
-            self.cur = db.get_cursor()
-            user_id = self.cur.execute("select id from Users where email like \'{m}\'".format(m=owner.email))
+    @classmethod
+    def add_item(cls, database_obj, owner, params):
+        item_type, title, uniqid, artist, genre, year = params
+        print("add_item: ", owner, item_type, title)
+        is_verified = False
+        try:
+            is_verified = database_obj.curs.execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[0]
+        except:
+            return "There is no such user."
+        if not is_verified:
+            return "Owner is not verified, item can't be created!"
+        else:
+            user_id = database_obj.curs.execute("select id from Users where email like \'{m}\'".format(m=owner.email))
             user_id = user_id.fetchone()[0]
-            self.owner = owner
-            self.item_type = item_type
-            self.genre = genre
-            self.location = None
-            self.view = 2
-            self.borrow = 2
-            self.detail = 2
-            self.comment = 2
-            self.search = 2
-            self.uniqid = uniqid
-            if uniqid is None:
-                self.title = title
-                self.uniqid = uniqid
-                self.artist = artist
-                self.year = year
-                db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
+            item_type = item_type
+            genre = genre
+            location = None
+            view = 2
+            borrow = 2
+            detail = 2
+            comment = 2
+            search = 2
+            if uniqid is '':
+                title = title
+                artist = artist
+                year = year
+                database_obj.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
                                     'detail', 'search', 'borrow', 'comment'), user_id, item_type, title,
                           uniqid, artist, genre, year, 2, 2, 2, 2, 2)
-                self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
-                print(self.id, self, ", item is created.")
+                id = database_obj.curs.execute("select last_insert_rowid()").fetchone()[0]
+                return " item is created."
             else:
                 metadata = None
                 try:
@@ -62,95 +77,31 @@ class Item:
                 except Exception as ex:
                     print(ex)
                 if metadata is not None:
-                    self.title = metadata['Title']
-                    self.year = metadata['Year']
-                    self.artist = metadata['Authors'][0]
-                    db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
+                    title = metadata['Title']
+                    year = metadata['Year']
+                    artist = metadata['Authors'][0]
+                    database_obj.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
                                     'detail', 'search', 'borrow', 'comment'), user_id,
-                              item_type, self.title, uniqid, self.artist, self.genre, self.year, 2, 2, 2, 2, 2)
-                    self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
-                    print(self.id, self, " item is created with isbn number : ", self.uniqid)
+                              item_type, title, uniqid, artist, genre, year, 2, 2, 2, 2, 2)
+                    id = database_obj.curs.execute("select last_insert_rowid()").fetchone()[0]
+                    return " item is created with isbn number :'{uid}'".format(uid=uniqid)
 
+            # TODO
             # if there is a user who watches owner, send notification followed users
             try:
-                users_watching = self.cur.execute(
-                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner.id, wmethod=self.WATCH_REQUEST_TYPES["USER"])).fetchall()
+                users_watching = database_obj.curs.execute(
+                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner.id, wmethod=cls.WATCH_REQUEST_TYPES["USER"])).fetchall()
             except:
                 users_watching = []
-            if users_watching == []:
+
+            if not users_watching:
                 return
             for user in users_watching[0]:
-                db.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                            owner.id, user, self.id,
-                            "{owner} add new \'{item}\' item.".format(owner=owner, item=self),
+                database_obj.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
+                            owner.id, user, database_obj.id,
+                            "{owner} add new item : \'{item}\' .".format(owner=owner, item=title),
                             datetime.now())
-                print("Receiver :  ", user, " Notification : ", "{owner} add new \'{item}\' item.".format(owner=owner, item=self))
-
-    def add_item(self, owner, item_type=None, title=None, uniqid=None, artist=None, genre=None, year=None):
-        is_verified = True
-        try:
-            is_verified = db.connection.cursor().execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[0]
-        except:
-            print("There is no such user.")
-        if not is_verified:
-            print("Owner is not verified, item can't be created!")
-            return
-        else:
-
-            self.cur = db.get_cursor()
-            user_id = self.cur.execute("select id from Users where email like \'{m}\'".format(m=owner.email))
-            user_id = user_id.fetchone()[0]
-            self.owner = owner
-            self.item_type = item_type
-            self.genre = genre
-            self.location = None
-            self.view = 2
-            self.borrow = 2
-            self.detail = 2
-            self.comment = 2
-            self.search = 2
-            self.uniqid = uniqid
-            if uniqid is None:
-                self.title = title
-                self.uniqid = uniqid
-                self.artist = artist
-                self.year = year
-                db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
-                                    'detail', 'search', 'borrow', 'comment'), user_id, item_type, title,
-                          uniqid, artist, genre, year, 2, 2, 2, 2, 2)
-                self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
-                print(self.id, self, ", item is created.")
-            else:
-                metadata = None
-                try:
-                    metadata = meta(isbn=uniqid)
-                except Exception as ex:
-                    print(ex)
-                if metadata is not None:
-                    self.title = metadata['Title']
-                    self.year = metadata['Year']
-                    self.artist = metadata['Authors'][0]
-                    db.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
-                                    'detail', 'search', 'borrow', 'comment'), user_id,
-                              item_type, self.title, uniqid, self.artist, self.genre, self.year, 2, 2, 2, 2, 2)
-                    self.id = self.cur.execute("select last_insert_rowid()").fetchone()[0]
-                    print(self.id, self, " item is created with isbn number : ", self.uniqid)
-
-            # if there is a user who watches owner, send notification followed users
-            try:
-                users_watching = self.cur.execute(
-                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner.id, wmethod=self.WATCH_REQUEST_TYPES["USER"])).fetchall()
-            except:
-                users_watching = []
-            if users_watching == []:
-                return
-            for user in users_watching[0]:
-                db.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                            owner.id, user, self.id,
-                            "{owner} add new \'{item}\' item.".format(owner=owner, item=self),
-                            datetime.now())
-                print("Receiver :  ", user, " Notification : ", "{owner} add new \'{item}\' item.".format(owner=owner, item=self))
-
+                print("Receiver :  ", user, " Notification : ", "{owner} add new item :\'{item}\' .".format(owner=owner, item=title))
 
     def borrowed_req(self, database_obj, user):
         already_requested = None
