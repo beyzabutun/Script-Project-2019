@@ -145,6 +145,7 @@ class Item:
         if already_borrowed is not None:
             return "This item is already borrowed."
         return "'{name}' borrowed the item: '{id}'".format(name=name, id=self.id)
+
     def returned(self, database_obj, params):
         print(params)
         location = params
@@ -178,6 +179,7 @@ class Item:
             print("Receiver :  ", user, " Notification : ",
                   " \'{item}\' item is returned.".format(item=self))  # TODO check
         return "You returned the item '{id}'".format(id=self.id)
+
     def make_comment(self, database_obj, user, comment_text):
         try:
             friend_state = self.cur.execute(
