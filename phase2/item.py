@@ -63,6 +63,7 @@ class Item:
             comment = 2
             search = 2
             if uniqid is '':
+                uniqid = None
                 title = title
                 artist = artist
                 year = year
@@ -109,24 +110,22 @@ class Item:
                       "{owner} add new item :\'{item}\' .".format(owner=owner, item=title))
 
     def borrowed_req(self, database_obj, user, params):
-        cur = database_obj.curs
         already_requested = None
         try:
-            already_requested = cur.execute("select user_id from BorrowRequests where item_id={item} and user_id={user}".format(item=self.id, user=user.id)).fetchone()[0]
+            already_requested = self.cur.execute("select user_id from BorrowRequests where item_id={item} and user_id={user}".format(item=self.id, user=user.id)).fetchone()[0]
         except:
             database_obj.insert("BorrowRequests", ('user_id', 'item_id', 'request_date'), user.id, self.id, datetime.now())
-        if already_requested is not None: # true
-            print("{user} already requested for this item.".format(user=user))
-        queue = cur.execute("select count(*) from BorrowRequests where item_id={self_id}"
-                                 .format(self_id = self.id)).fetchone()[0]
-
+        queue = self.cur.execute("select count(*) from BorrowRequests where item_id={self_id}"
+                                 .format(self_id=self.id)).fetchone()[0]
+        if already_requested is not None:  # true
+            return "{user} already requested for this item, and your place in borrow request list: '{queue}'".format(
+                user=user, queue=queue)
         return "'{user}' Your place in borrow request list: '{queue}'".format(user=user, queue=queue)
 
     def borrowed_by(self, database_obj, params):
         email, return_date = params
         if return_date == '':
             return_date = 2
-        cur = database_obj.curs
         taking_date = datetime.now()
         return_date = taking_date + timedelta(weeks=return_date)
         query = self.cur.execute("select id, name from Users where email = \'{email}\'".format(email=email)).fetchone()
@@ -135,19 +134,22 @@ class Item:
 
         already_borrowed = None
         try:
-            already_borrowed = cur.execute(f"select id from Borrows where is_returned=0 and item_id={'?'}", [self.id]).fetchone()[0]
+            already_borrowed = self.cur.execute(f"select id from Borrows where is_returned=0 and item_id={'?'}", [self.id]).fetchone()[0]
 
         except:
             database_obj.insert("Borrows", ('user_id', 'item_id', 'taking_date', 'return_date', 'is_returned'), user_id,
                       self.id, datetime.now(), return_date, 0)
-            cur.execute('delete from BorrowRequests where user_id={user} and item_id={item} ;'
+            self.cur.execute('delete from BorrowRequests where user_id={user} and item_id={item} ;'
                              .format(user=user_id, item=self.id ))
             database_obj.conn.commit()
         if already_borrowed is not None:
-            return "This item already borrowed."
-        return "'{name}' borrowed the item: '{id}'".format(id=name, id=self.id)
-
-    def returned(self, database_obj, location=None):
+            return "This item is already borrowed."
+        return "'{name}' borrowed the item: '{id}'".format(name=name, id=self.id)
+    def returned(self, database_obj, params):
+        print(params)
+        location = params
+        if location=='':
+            location = None
         self.cur.execute("update Borrows set is_returned=1 where is_returned=0 and item_id={id};".format(id=self.id))
         self.location = location
         self.cur.execute("update Items set location=\'{loc}\' where id={id};".format(loc=location, id=self.id))
@@ -166,16 +168,17 @@ class Item:
         except:
             users_watching = []
         if users_watching == []:
-            return
+            return "You returned the item '{id}'".format(id=self.id)
         for user in users_watching[0]:
-            db.insert("Notifications",
+            database_obj.insert("Notifications",
                         ("sender", "receiver", "item_id", "notification_text", "notification_date"),
                         self.owner.id, user, self.id,
                         " \'{item}\' item is returned.".format(item=self),
                         datetime.now())
-            print("Receiver :  ", user, " Notification : ", " \'{item}\' item is returned.".format(item=self))
-
-    def make_comment(self, user, comment_text):
+            print("Receiver :  ", user, " Notification : ",
+                  " \'{item}\' item is returned.".format(item=self))  # TODO check
+        return "You returned the item '{id}'".format(id=self.id)
+    def make_comment(self, database_obj, user, comment_text):
         try:
             friend_state = self.cur.execute(
                 "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
@@ -212,30 +215,30 @@ class Item:
             print("Receiver :", watcher,
                   " Notification : ", "{user} commented for {owner}\'s \'{item}\' item.".format(owner=self.owner, user=user, item=self))
 
-    def list_comments(self):
+    def list_comments(self, database_obj,):
         fetched_comments = self.cur.execute(
             'select user_id, comment from Comments where item_id={item} order by datetime(date);'
                 .format(item=self.id)).fetchall()
         return fetched_comments
 
-    def rate(self, user, rating):
+    def rate(self, database_obj, user, rating):
         self.cur.execute(
             'update Borrows set rate={rate} where item_id={item} and user_id ={user} and is_returned=1 ; '
                 .format(user=user.id, item=self.id, rate=rating))
         db.connection.commit()
 
-    def get_rating(self):
+    def get_rating(self, database_obj,):
         avg_rating = self.cur.execute(
             'select avg(rate) from Borrows where item_id={item} and rate is not null;'
                 .format(item=self.id)).fetchone()[0]
         return avg_rating
 
-    def locate(self, location):
+    def locate(self, database_obj, location):
         self.cur.execute(
             "update Items set location=\'{loc}\' where id={id};".format(loc=location, id=self.id))
         db.connection.commit()
 
-    def setstate(self, state_type, state):
+    def setstate(self, database_obj, state_type, state):
         # print("update Items set {state_type}={state} where id={item}".format(item=self.id, state_type=state_type, state=self.STATE_TYPE[state]))
         self.__setattr__(state_type, state)
         self.cur.execute("update Items set {state_type}={state} where id={item};"
@@ -262,8 +265,8 @@ class Item:
                       "{user} changed borrow permission for \'{item}\' item to {state}.".format(user=self.owner, item=self, state=state))
 
     @classmethod
-    def search(cls, user, search_text, genre, year=None, for_borrow=False):
-        db_cur = db.get_cursor()
+    def search(cls, database_obj, user, search_text, genre, year=None, for_borrow=False):
+        db_cur = database_obj.curs
         words_text = list(search_text.split(" "))
         words = []
         for i in words_text:
@@ -313,10 +316,10 @@ class Item:
                 list_user_item = db_cur.execute(f_string, data).fetchall()
         return list_user_item
 
-    def watch(self, user, watch_method):
-        db.insert('WatchRequests', ('user_id', 'item_id', 'watch_method'), user.id, self.id, self.WATCH_REQUEST_TYPES[watch_method])
+    def watch(self, database_obj, user, watch_method):
+        database_obj.insert('WatchRequests', ('user_id', 'item_id', 'watch_method'), user.id, self.id, self.WATCH_REQUEST_TYPES[watch_method])
 
-    def view_info(self, user):
+    def view_info(self, database_obj, user):
         # try:
         #     friend_state = self.cur.execute(
         #         "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
@@ -355,8 +358,7 @@ class Item:
             print("view permission for this item: ", list(self.STATE_TYPE.keys())[view])
             print("{user} has no permission to view summary information of this item.".format(user=user))
 
-
-    def detailed_info(self, user):
+    def detailed_info(self, database_obj, user):
         try:
             friend_state = self.cur.execute(
                 "select state from Friends where (sender_user = {self_id} and receiver_user = {user_id}) or (sender_user = {user_id} and receiver_user = {self_id})"
@@ -378,16 +380,15 @@ class Item:
             print("detail permission for this item: ", list(self.STATE_TYPE.keys())[detail])
             print("{user} has no permission to view detailed information of this item.".format(user=user))
 
+    def announce(self, database_obj, owner_type, msg):
+        database_obj.insert("Announcements", ("item_id", "friend_type", "msg"), self.id, owner_type, msg)
 
-    def announce(self, owner_type, msg):
-        db.insert("Announcements", ("item_id", "friend_type", "msg"), self.id, owner_type, msg)
-
-    def delete(self):
+    def delete(self, database_obj,):
         self.cur.execute("delete from Items where id = {item_id}".format(item_id=self.id))
         self.cur.execute("delete from BorrowRequests where item_id = {item_id}".format(item_id=self.id))
         self.cur.execute("delete from WatchRequests where item_id = {item_id} and (watch_method={breq} or watch_method={creq})"
                          .format(item_id=self.id, breq=self.WATCH_REQUEST_TYPES["BORROW"], creq=self.WATCH_REQUEST_TYPES['COMMENT']))
-        db.connection.commit()
+        database_obj.conn.commit()
 
     def __repr__(self):
         return self.title

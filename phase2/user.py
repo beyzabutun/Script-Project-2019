@@ -60,7 +60,6 @@ class User:
             # print(id)
             return ('+',id, " Logged in.", is_verified)
 
-
     def verify(self, database_obj, params):
         (email, verification_number) = params
         cur = self.cur
@@ -169,6 +168,18 @@ class User:
             return "{follower} watching {followed}.".format(follower=self, followed=name)
         else:
             return "{follower} and {followed} are not friend. Watching denied".format(follower=self, followed=name)
+
+    def list_borrowable_items(self, database_obj, params):
+        f_string = f'SELECT owner, id, title ' + \
+                   f'FROM Items WHERE ' + \
+                   f'borrow!=0 and (borrow=3 or (owner in ' + \
+                   f'(SELECT sender_user from Friends where receiver_user={"?"}  and Items.borrow>=state)  or ' + \
+                   f'owner in (SELECT receiver_user from Friends where sender_user={"?"}  and Items.borrow>=state))) ' + \
+                   f';'
+        data = [self.id] * 2
+        list_items = database_obj.curs.execute(f_string, data).fetchall()
+        print(list_items)
+        return list_items
 
     def __repr__(self):
         return self.name + " " + self.surname

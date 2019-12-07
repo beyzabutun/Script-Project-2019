@@ -22,8 +22,8 @@ class Client:
     }
     server_addr = '127.0.0.1'
 
-    request_port = 21455
-    notification_port = 12510
+    request_port = 21456
+    notification_port = 12512
     meta_data = None
     is_login = False
 
@@ -53,8 +53,9 @@ class Client:
                     'watch': cls.request_handler,
                     'add_item' : cls.request_handler,
                     'borrowed_req': cls.request_handler,
-                    'borrowed_by' : cls.request_handler
-
+                    'borrowed_by' : cls.request_handler,
+                    'list_borrowable_items': cls.request_handler,
+                    'returned': cls.request_handler
 
                 }
             print(msg[1])
@@ -113,9 +114,9 @@ class Client:
             msg = request_sock.recv(1024)
             msg = pickle.loads(msg)
             print(msg)
-        elif request_type == 'borrow request':
+        elif request_type == 'borrowed_req':
             item_id = input("Item ID that you want to borrow: ")
-            params = ('borrow_req', item_id)
+            params = ('borrowed_req', item_id)
             params = pickle.dumps(params)
             request_sock.send(params)
             msg = request_sock.recv(1024)
@@ -124,7 +125,17 @@ class Client:
         elif request_type == 'borrowed_by':
             item_id = input("Item ID that you want to lend: ")
             email = input("User's email that you want to accept borrow request: ")
-            params = ('borrowed_by', item_id, email)
+            return_date = input("Return date: ")
+            params = ('borrowed_by', item_id, email, return_date)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
+        elif request_type == 'returned':
+            item_id = input("Item ID that you want to return: ")
+            location = input("Location: ")
+            params = ('returned', item_id, location)
             params = pickle.dumps(params)
             request_sock.send(params)
             msg = request_sock.recv(1024)
@@ -142,6 +153,16 @@ class Client:
             request_sock.send(params)
             msg = request_sock.recv(1024)
             msg = pickle.loads(msg)
+            print(msg)
+        elif request_type == 'returned':
+            pass
+        elif request_type == 'list_borrowable_items':
+            params = ('list_borrowable_items',)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print("[(owner id, item id, item title)]")
             print(msg)
 
 
@@ -200,7 +221,9 @@ class Client:
                             'watch': cls.request_handler,
                             'add_item': cls.request_handler,
                             'borrowed_req': cls.request_handler,
-                            'borrowed_by' : cls.request_handler
+                            'borrowed_by' : cls.request_handler,
+                            'returned': cls.request_handler,
+                            'list_borrowable_items': cls.request_handler
 
                         }
 

@@ -1,11 +1,8 @@
 from socket import socket, AF_INET, SOCK_STREAM
-from concurrent.futures import ThreadPoolExecutor as TPE
 from typing import List, Tuple
-from random import randint
 import create_tables
 import user
 import item
-from time import sleep
 import database
 import sqlite3
 import pickle
@@ -14,8 +11,8 @@ from threading import Thread
 
 
 class Server:
-    request_port = 21455
-    notification_port = 12510
+    request_port = 21456
+    notification_port = 12512
     notification_waiting_clients = dict()
     notification_sock = socket(AF_INET, SOCK_STREAM)
 
@@ -29,10 +26,13 @@ class Server:
             'set_friend' : user.User.set_friend,
             'lookup': user.User.look_up,
             'list_items': user.User.list_items,
-            'watch': user.User.watch
+            'watch': user.User.watch,
+            'list_borrowable_items': user.User.list_borrowable_items,
+            'borrowed_by': item.Item.borrowed_by,
+            'returned': item.Item.returned
         },
         'item': {
-            'add_item' : item.Item.add_item,
+            'add_item': item.Item.add_item,
             'borrowed_req': item.Item.borrowed_req,
             'borrowed_by': item.Item.borrowed_by
 
@@ -97,12 +97,12 @@ class Server:
                 func = cls.meta_data['item'][request_type[0]]
                 if request_type[0] != 'add_item':
                     item_id = request_type[1]
-                    item = item.Item(database_obj, item_id)
+                    _item = item.Item(database_obj, item_id)
                     if request_type[0] in cls.user_required_functions:
-                        msg = func(item, database_obj, client, request_type[2:])
+                        msg = func(_item, database_obj, client, request_type[2:])
                         msg = pickle.dumps(msg)
                     else:
-                        msg = func(item, database_obj, request_type[2:])
+                        msg = func(_item, database_obj, request_type[2:])
                         msg = pickle.dumps(msg)
                 else:   # add item
                     msg = func(database_obj, client, request_type[1:])
