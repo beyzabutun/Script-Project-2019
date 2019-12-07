@@ -51,7 +51,10 @@ class Client:
                     'lookup' : cls.request_handler,
                     'list_items' : cls.request_handler,
                     'watch': cls.request_handler,
-                    'add_item': cls.request_handler,
+                    'add_item' : cls.request_handler,
+                    'borrowed_req': cls.request_handler,
+                    'borrowed_by' : cls.request_handler
+
 
                 }
             print(msg[1])
@@ -110,6 +113,23 @@ class Client:
             msg = request_sock.recv(1024)
             msg = pickle.loads(msg)
             print(msg)
+        elif request_type == 'borrow request':
+            item_id = input("Item ID that you want to borrow: ")
+            params = ('borrow_req', item_id)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
+        elif request_type == 'borrowed_by':
+            item_id = input("Item ID that you want to lend: ")
+            email = input("User's email that you want to accept borrow request: ")
+            params = ('borrowed_by', item_id, email)
+            params = pickle.dumps(params)
+            request_sock.send(params)
+            msg = request_sock.recv(1024)
+            msg = pickle.loads(msg)
+            print(msg)
         elif request_type == 'add_item':
             item_type = input("Item Type: ")
             title = input("Title: ")
@@ -123,6 +143,7 @@ class Client:
             msg = request_sock.recv(1024)
             msg = pickle.loads(msg)
             print(msg)
+
 
     @classmethod
     def notification(cls, user_id):
@@ -178,6 +199,8 @@ class Client:
                             'list_items' : cls.request_handler,
                             'watch': cls.request_handler,
                             'add_item': cls.request_handler,
+                            'borrowed_req': cls.request_handler,
+                            'borrowed_by' : cls.request_handler
 
                         }
 

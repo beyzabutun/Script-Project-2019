@@ -32,10 +32,15 @@ class Server:
             'watch': user.User.watch
         },
         'item': {
-            'add_item': item.Item.add_item
-        }
+            'add_item' : item.Item.add_item,
+            'borrowed_req': item.Item.borrowed_req,
+            'borrowed_by': item.Item.borrowed_by
 
+
+        }
     }
+
+    user_required_functions = ('borrowed_req',)
 
     @classmethod
     def send_notification(cls, notification_msg: str, user_id):
@@ -93,14 +98,16 @@ class Server:
                 if request_type[0] != 'add_item':
                     item_id = request_type[1]
                     item = item.Item(database_obj, item_id)
-                    msg = func(item, database_obj, request_type[2:])
-                    msg = pickle.dumps(msg)
+                    if request_type[0] in cls.user_required_functions:
+                        msg = func(item, database_obj, client, request_type[2:])
+                        msg = pickle.dumps(msg)
+                    else:
+                        msg = func(item, database_obj, request_type[2:])
+                        msg = pickle.dumps(msg)
                 else:   # add item
                     msg = func(database_obj, client, request_type[1:])
                     msg = pickle.dumps(msg)
 
-            print(request_type[1:])
-            print("return from ", request_type[0], 'msg', msg)
             request_sock.send(msg)
 
         db.close()

@@ -45,7 +45,8 @@ class Item:
         print("add_item: ", owner, item_type, title)
         is_verified = False
         try:
-            is_verified = database_obj.curs.execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[0]
+            is_verified = database_obj.curs.execute('select is_verified from Users where id=?', (owner.id,)).fetchone()[
+                0]
         except:
             return "There is no such user."
         if not is_verified:
@@ -66,8 +67,8 @@ class Item:
                 artist = artist
                 year = year
                 database_obj.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
-                                    'detail', 'search', 'borrow', 'comment'), user_id, item_type, title,
-                          uniqid, artist, genre, year, 2, 2, 2, 2, 2)
+                                              'detail', 'search', 'borrow', 'comment'), user_id, item_type, title,
+                                    uniqid, artist, genre, year, 2, 2, 2, 2, 2)
                 id = database_obj.curs.execute("select last_insert_rowid()").fetchone()[0]
                 return " item is created."
             else:
@@ -80,9 +81,10 @@ class Item:
                     title = metadata['Title']
                     year = metadata['Year']
                     artist = metadata['Authors'][0]
-                    database_obj.insert("Items", ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
-                                    'detail', 'search', 'borrow', 'comment'), user_id,
-                              item_type, title, uniqid, artist, genre, year, 2, 2, 2, 2, 2)
+                    database_obj.insert("Items",
+                                        ('owner', 'type', 'title', 'uniqueid', 'artist', 'genre', 'year', 'view',
+                                         'detail', 'search', 'borrow', 'comment'), user_id,
+                                        item_type, title, uniqid, artist, genre, year, 2, 2, 2, 2, 2)
                     id = database_obj.curs.execute("select last_insert_rowid()").fetchone()[0]
                     return " item is created with isbn number :'{uid}'".format(uid=uniqid)
 
@@ -90,62 +92,69 @@ class Item:
             # if there is a user who watches owner, send notification followed users
             try:
                 users_watching = database_obj.curs.execute(
-                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(owner=owner.id, wmethod=cls.WATCH_REQUEST_TYPES["USER"])).fetchall()
+                    "select user_id from WatchRequests where followed_id={owner} and watch_method={wmethod}".format(
+                        owner=owner.id, wmethod=cls.WATCH_REQUEST_TYPES["USER"])).fetchall()
             except:
                 users_watching = []
 
             if not users_watching:
                 return
             for user in users_watching[0]:
-                database_obj.insert("Notifications", ("sender", "receiver", "item_id", "notification_text", "notification_date"),
-                            owner.id, user, database_obj.id,
-                            "{owner} add new item : \'{item}\' .".format(owner=owner, item=title),
-                            datetime.now())
-                print("Receiver :  ", user, " Notification : ", "{owner} add new item :\'{item}\' .".format(owner=owner, item=title))
+                database_obj.insert("Notifications",
+                                    ("sender", "receiver", "item_id", "notification_text", "notification_date"),
+                                    owner.id, user, database_obj.id,
+                                    "{owner} add new item : \'{item}\' .".format(owner=owner, item=title),
+                                    datetime.now())
+                print("Receiver :  ", user, " Notification : ",
+                      "{owner} add new item :\'{item}\' .".format(owner=owner, item=title))
 
-    def borrowed_req(self, database_obj, user):
+    def borrowed_req(self, database_obj, user, params):
+        cur = database_obj.curs
         already_requested = None
         try:
-            already_requested = self.cur.execute("select user_id from BorrowRequests where item_id={item} and user_id={user}".format(item=self.id, user=user.id)).fetchone()[0]
+            already_requested = cur.execute("select user_id from BorrowRequests where item_id={item} and user_id={user}".format(item=self.id, user=user.id)).fetchone()[0]
         except:
-            db.insert("BorrowRequests", ('user_id', 'item_id', 'request_date'), user.id, self.id, datetime.now())
+            database_obj.insert("BorrowRequests", ('user_id', 'item_id', 'request_date'), user.id, self.id, datetime.now())
         if already_requested is not None: # true
             print("{user} already requested for this item.".format(user=user))
-        # fetched_users = self.cur.execute(
-        #     'select user_id from BorrowRequests where item_id={item} order by datetime(request_date)  ;'
-        #         .format(item=self.id)).fetchall()
-        # result = []
-        # for user in fetched_users:
-        #     result.append(user[0])
-        # return result
-        queue = self.cur.execute("select count(*) from BorrowRequests where item_id={self_id}"
+        queue = cur.execute("select count(*) from BorrowRequests where item_id={self_id}"
                                  .format(self_id = self.id)).fetchone()[0]
 
-        print(user, "Your place in borrow request list: ", queue)
+        return "'{user}' Your place in borrow request list: '{queue}'".format(user=user, queue=queue)
 
-    def borrowed_by(self, user, return_date=2):
+    def borrowed_by(self, database_obj, params):
+        email, return_date = params
+        if return_date == '':
+            return_date = 2
+        cur = database_obj.curs
         taking_date = datetime.now()
         return_date = taking_date + timedelta(weeks=return_date)
-        alread_borrowed = None
-        try:
-            alread_borrowed = self.cur.execute(f"select id from Borrows where is_returned=0 and item_id={'?'}", [self.id]).fetchone()[0]
-        except:
-            db.insert("Borrows", ('user_id', 'item_id', 'taking_date', 'return_date', 'is_returned'), user.id,
-                      self.id, datetime.now(), return_date, 0)
-            self.cur.execute('delete from BorrowRequests where user_id={user} and item_id={item} ;'
-                             .format(user=user.id, item=self.id ))
-            db.connection.commit()
-        if alread_borrowed is not None:
-            print("This item already borrowed.")
+        query = self.cur.execute("select id, name from Users where email = \'{email}\'".format(email=email)).fetchone()
+        user_id = query[0]
+        name = query[1]
 
-    def returned(self, location=None):
+        already_borrowed = None
+        try:
+            already_borrowed = cur.execute(f"select id from Borrows where is_returned=0 and item_id={'?'}", [self.id]).fetchone()[0]
+
+        except:
+            database_obj.insert("Borrows", ('user_id', 'item_id', 'taking_date', 'return_date', 'is_returned'), user_id,
+                      self.id, datetime.now(), return_date, 0)
+            cur.execute('delete from BorrowRequests where user_id={user} and item_id={item} ;'
+                             .format(user=user_id, item=self.id ))
+            database_obj.conn.commit()
+        if already_borrowed is not None:
+            return "This item already borrowed."
+        return "'{name}' borrowed the item: '{id}'".format(id=name, id=self.id)
+
+    def returned(self, database_obj, location=None):
         self.cur.execute("update Borrows set is_returned=1 where is_returned=0 and item_id={id};".format(id=self.id))
         self.location = location
         self.cur.execute("update Items set location=\'{loc}\' where id={id};".format(loc=location, id=self.id))
         # TODO:
         # send notification to users who watches the item to borrow
         # delete watchrequest after notification
-        db.connection.commit()
+        database_obj.conn.commit()
         try:
             users_watching = self.cur.execute(
                 "select user_id from WatchRequests where item_id={item} and watch_method={wmethod}"
@@ -153,7 +162,7 @@ class Item:
             self.cur.execute(
                 "delete from WatchRequests where item_id={item} and  watch_method={wmethod}"
                     .format(item=self.id, wmethod=self.WATCH_REQUEST_TYPES["BORROW"]))
-            db.connection.commit()
+            database_obj.conn.commit()
         except:
             users_watching = []
         if users_watching == []:
