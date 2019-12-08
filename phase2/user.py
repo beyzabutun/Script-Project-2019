@@ -29,12 +29,11 @@ class User:
         self.password = user[4]
         self.is_verified = user[5]
         self.verification_number = user[6]
-        print("user : ", self.id, self.name, self.surname, self.email, self.password, self.password, "verification : ", self.verification_number)
 
     @classmethod
     def sign_up(cls, database_obj, params):
         characters = string.digits
-        verification_number = "".join(choice(characters) for c in range(6))
+        verification_number = '111111'
         database_obj.insert("Users",
                                      ('name', 'surname', 'email', 'password', 'is_verified', 'verification_number'),
                                      params[0], params[1], params[2], params[3], 0, verification_number)
@@ -46,7 +45,6 @@ class User:
 
     @classmethod
     def login(cls, database_obj, params):
-        print("params in login ", params)
         cur = database_obj.conn.cursor()
 
         query = cur.execute('select count(*), is_verified from Users where email = \'{uemail}\''.format(uemail=params[0])).fetchone()
@@ -56,8 +54,7 @@ class User:
         if count == 0:
             return ('-', " Wrong email.")
         else:
-            # id = cur.execute('select u.id from Users u where u.email = \'{uemail}\''.format(uemail=params[0])).fetchone()[0]
-            # print(id)
+            id = cur.execute('select u.id from Users u where u.email = \'{uemail}\''.format(uemail=params[0])).fetchone()[0]
             return ('+',id, " Logged in.", is_verified)
 
     def verify(self, database_obj, params):
@@ -89,9 +86,7 @@ class User:
         return "Your password is changed."
 
     def look_up(self, database_obj, email_list):
-        print(type(email_list[0]))
         email_list = tuple(email_list[0][1:-1].split(","))
-        print("emailliiisssst: ", type(email_list), email_list)
         fetched_mails = self.cur.execute('select email from Users u where u.email in {elist}'.format(elist=email_list))
         fetched_mails = fetched_mails.fetchall()
         if not fetched_mails:
@@ -130,7 +125,7 @@ class User:
             friend_state = 0
         if friend_state == 0:
             item_list = self.cur.execute("select i.id from Items i where i.owner = {user_id} and i.view = {state_type}"
-                                         .format(user_id=user_id, state_type=friend_state))
+                                         .format(user_id=user_id, state_type=3))
         else:
             item_list = self.cur.execute("select i.id from Items i where i.owner = {user_id} and i.view >= {state_type}"
                                          .format(user_id=user_id, state_type=friend_state))
@@ -139,13 +134,14 @@ class User:
         for item in item_list:
             result.append(item[0])
         if not result:
-            return "There is no item(s).\n"
+            return "There is no item that you can view.\n"
         return result
 
 
     def watch(self, database_obj, params):
         email, watch_method = params
-
+        if watch_method == '':
+            watch_method = None
         query = \
         self.cur.execute('select u.id, u.name from Users u where u.email = \'{uemail}\''.format(uemail=email)).fetchone()
 
@@ -178,7 +174,6 @@ class User:
                    f';'
         data = [self.id] * 2
         list_items = database_obj.curs.execute(f_string, data).fetchall()
-        print(list_items)
         return list_items
 
     def __repr__(self):

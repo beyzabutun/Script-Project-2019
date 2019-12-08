@@ -1,3 +1,5 @@
+#!/usr/bin/python3.7
+
 from socket import socket, AF_INET, SOCK_STREAM
 from typing import List, Tuple
 import create_tables
@@ -7,15 +9,15 @@ import database
 import sqlite3
 import pickle
 import threading
-from threading import Thread
+from threading import Thread, Lock
 
 
 class Server:
-    request_port = 21456
-    notification_port = 12512
+    request_port = 2145
+    notification_port = 1251
     notification_waiting_clients = dict()
     notification_sock = socket(AF_INET, SOCK_STREAM)
-
+    mutex = Lock()
     meta_data = {
         'user': {
             'sign_up': user.User.sign_up,
@@ -28,85 +30,133 @@ class Server:
             'list_items': user.User.list_items,
             'watch': user.User.watch,
             'list_borrowable_items': user.User.list_borrowable_items,
-            'borrowed_by': item.Item.borrowed_by,
-            'returned': item.Item.returned
         },
         'item': {
             'add_item': item.Item.add_item,
             'borrowed_req': item.Item.borrowed_req,
-            'borrowed_by': item.Item.borrowed_by
-
-
+            'borrowed_by': item.Item.borrowed_by,
+            'returned' : item.Item.returned,
+            'make_comment' : item.Item.make_comment,
+            'list_comments' : item.Item.list_comments,
+            'rate' : item.Item.rate,
+            'get_rating' : item.Item.get_rating,
+            'locate' : item.Item.locate,
+            'setstate' : item.Item.setstate,
+            'search' : item.Item.search,
+            'item_watch' : item.Item._watch,
+            'view_info' : item.Item.view_info,
+            'detailed_info' : item.Item.detailed_info,
+            'announce' : item.Item.announce,
+            'delete' : item.Item.delete
         }
     }
 
-    user_required_functions = ('borrowed_req',)
+    user_required_functions = ('borrowed_req', 'rate', 'make_comment', 'search', 'item_watch', 'view_info', 'detailed_info', 'announce')
 
     @classmethod
-    def send_notification(cls, notification_msg: str, user_id):
+    def send_notification(cls, notification_msg: str, user_ids):
         # if uid in cls.notification_waiting_clients:
-        print(notification_msg)
         notification_msg = pickle.dumps(notification_msg)
-        print(cls.notification_waiting_clients[user_id])
-        cls.notification_waiting_clients[user_id].send(notification_msg)
+        for user_id in user_ids:
+            if user_id in cls.notification_waiting_clients:
+                try:
+                    cls.notification_waiting_clients[user_id].send(notification_msg)
+                except:
+                    continue
 
     @classmethod
     def notification_handler(cls, notification_sock, addr: Tuple):
         user_id = notification_sock.recv(128)
         user_id = pickle.loads(user_id)
         print(f'A Client is registered to be notified with user id : {user_id} with address: {addr}')
-
-        print(threading.current_thread().ident)
         cls.notification_waiting_clients[user_id] = notification_sock
         # cls.send_notification("hola", user_id)
 
     @classmethod
     def request_handler(cls, request_sock):
-        print('Request Handler is started')
         db = sqlite3.connect('data.db')
         database_obj = database.DBConnection(db, db.cursor())
         while True:
-            print(request_sock)
-            print(threading.current_thread().ident)
             request = request_sock.recv(1024)
-            print("after taking params", request)
 
             if request == b'':
                 print('empty req. aborting.')
                 break
 
             request_type = pickle.loads(request)
-            print(request_type[0])
 
             if request_type[0] not in cls.meta_data['user'] and request_type[0] not in cls.meta_data['item'] :
                 print('no req')
                 continue
 
-            print(request_type)
             if request_type[0] in cls.meta_data['user']:
                 func = cls.meta_data['user'][request_type[0]]
                 if request_type[0] != 'login' and request_type[0] != 'sign_up':
+                    cls.mutex.acquire()
                     msg = func(client, database_obj, request_type[1:])
+                    cls.mutex.release()
                     msg = pickle.dumps(msg)
                 else:
+                    cls.mutex.acquire()
                     msg = func(database_obj, request_type[1:])
+                    cls.mutex.release()
                     if msg[0] == '+':
                         client = user.User(database_obj, email=request_type[1], password=request_type[2])
                     msg = pickle.dumps(msg)
             else:
                 func = cls.meta_data['item'][request_type[0]]
-                if request_type[0] != 'add_item':
+                if request_type[0] != 'add_item' and request_type[0] != 'search':
                     item_id = request_type[1]
+                    cls.mutex.acquire()
                     _item = item.Item(database_obj, item_id)
-                    if request_type[0] in cls.user_required_functions:
+                    cls.mutex.release()
+                    if _item.id == -1:
+                        msg = "The item does not exist anymore."
+                        msg = pickle.dumps(msg)
+                    elif request_type[0] in cls.user_required_functions:
+                        cls.mutex.acquire()
                         msg = func(_item, database_obj, client, request_type[2:])
+                        cls.mutex.release()
+                        if request_type[0] == 'announce':
+                            text, result = msg[0]
+                            msg = msg[1]
+                            cls.send_notification(text, result)
+                        elif request_type[0] == 'make_comment':
+                            text, result = msg[0]
+                            msg = msg[1]
+                            cls.send_notification(text, result)
+
+
                         msg = pickle.dumps(msg)
                     else:
+                        cls.mutex.acquire()
                         msg = func(_item, database_obj, request_type[2:])
+                        cls.mutex.release()
+                        if request_type[0] == 'delete':
+                            text, result = msg[0]
+                            msg = msg[1]
+                            cls.send_notification(text, result)
+                        elif request_type[0] == 'setstate':
+                            text, result = msg[0]
+                            msg = msg[1]
+                            cls.send_notification(text, result)
+
                         msg = pickle.dumps(msg)
-                else:   # add item
+                elif request_type[0] == 'add_item':   # add item
+                    cls.mutex.acquire()
                     msg = func(database_obj, client, request_type[1:])
+                    cls.mutex.release()
+                    text, result = msg[0]
+                    msg = msg[1]
+                    cls.send_notification(text, result)
                     msg = pickle.dumps(msg)
+                else:   #  search_item
+                    cls.mutex.acquire()
+                    msg = func(database_obj, client, request_type[1:])
+                    cls.mutex.release()
+                    msg = pickle.dumps(msg)
+
+
 
             request_sock.send(msg)
 
@@ -124,7 +174,6 @@ class Server:
         while True:
 
             conn, peer = request_handler_sock.accept()
-            print("conn ", conn)
             req_handler = Thread(target=cls.request_handler, args=(conn,))
             req_handler.start()
             print("New client -> thread : ", req_handler.ident)
