@@ -11,7 +11,10 @@
 
     {%block head%}
     {%endblock%}
-
+        <script
+          src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+          integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
+          crossorigin="anonymous"></script>
          <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
         <link rel="stylesheet" href="{% static 'css/base.css' %}">
         <link rel="shortcut icon" type="image/x-icon" href="{%static 'images/download.png'%}"/>
@@ -49,9 +52,58 @@
                 </ul>
           </div>
         </nav>
-  {% if user.is_authenticated %}
-        {% block block_for_authenticated_users %}
-        {% endblock %}
+
+   {%if user.is_authenticated%}
+
+        <div class="container-fluid ">
+            <nav class="col-md-2 d-none d-md-block bg-light sidebar" style="width: auto">
+              <div class="sidebar-sticky" >
+                <ul class="nav flex-column">
+
+                    <li class="nav-item">
+{#                        <a class="nav-link" href="{% url 'social_network_app:edit_profile'  %}">#}
+                            <h4>{{user.first_name|capfirst}} {{user.last_name|capfirst}}</h4>
+{#                        </a>#}
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{% url 'social_network_app:user_items_list' request.user.pk %}" >
+                            My Items
+                        </a>
+                    </li>
+
+                    <li class="nav-item" >
+                        <a href="{% url 'social_network_app:friendships' %}" >
+                            Friends
+                        </a>
+                    </li>
+                    <li class="nav-item" >
+                        <a href="{% url 'social_network_app:borrow_requests' %}" >
+                            Borrows & Requests
+                        </a>
+                    </li>
+                    <li class="nav-item" >
+                        <a href="{% url 'social_network_app:all_items' %}" >
+                            All Items
+                        </a>
+                    </li>
+                    <li class="nav-item" >
+                        <a href="{% url 'social_network_app:all_users' %}" >
+                            All Users
+                        </a>
+                    </li>
+                </ul>
+              </div>
+            </nav>
+
+            <div class="col-sm-10 ">
+
+                    {% block block_for_authenticated_users%}
+                    {%endblock%}
+
+            </div>
+        </div>
+
   {% else %}
         {%block block_for_unauthenticated_users %}
         {% endblock %}

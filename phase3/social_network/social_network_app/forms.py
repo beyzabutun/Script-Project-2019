@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from social_network_app.models import *
 from  django import forms
 
 
@@ -16,3 +17,5 @@ class UserForm(forms.ModelForm):
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=forms.TextInput(attrs={'placeholder': 'Email Address'}), label='', max_length=254, required=True)
     password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Password'}),  label='', max_length=128, required=True)
+
+

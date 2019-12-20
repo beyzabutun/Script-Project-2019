@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% load extras %}
+{% block block_for_authenticated_users %}
+    <ul class="list-group">
+          <li class="list-group-item disabled"> Item Request List  </li>
+    {% for user in users %}
+        <li class="list-group-item"><a href="/user_items_list/{{ user.id }}/">{{ user.first_name| capfirst }} {{ user.last_name|capfirst }}</a> </li>
+    {% endfor %}
+     </ul>
+
+
+
+{% endblock %}
+
+{% block block_for_unauthenticated_users %}
+    <h2>hooooop nabıyon</h2>
+{% endblock %}
