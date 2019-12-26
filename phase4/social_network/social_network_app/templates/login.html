@@ -2,16 +2,18 @@
 {% load static %}
 {% block head %}
 
-{#     <link rel="stylesheet" href="{%static 'css/form.css'%}">#}
+     <link rel="stylesheet" href="{%static 'css/form.css'%}">
 {% endblock %}
 {% block block_for_unauthenticated_users%}
-    {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
+    <div class="bg">
+        {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
     <div class="container">
         <div class="item">
 
@@ -26,6 +28,7 @@
                 </form>
             </div>
         </div>
+    </div>
     </div>
 
 {% endblock%}

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block block_for_authenticated_users %}
 {% load extras %}
+    <div style="margin: 10px 120px 10px 150px">
     <h3>Friends</h3>
     <table class="table table-striped">
     <thead>
@@ -97,7 +98,7 @@
 
     </tbody>
   </table>
-
+    </div>
 {% endblock %}
 
 {% block block_for_unauthenticated_users %}

@@ -2,8 +2,9 @@
 
 {% load extras %}
 {% block block_for_authenticated_users %}
-<h3> Announcements</h3>
-<table class="table table-striped">
+    <div style="margin: 10px 120px 10px 120px">
+        <h3> Announcements</h3>
+        <table class="table table-striped">
     <br>
     <thead>
       <tr>
@@ -27,6 +28,7 @@
 
     </tbody>
   </table>
+    </div>
 {% endblock %}
 
 {% block block_for_unauthenticated_users %}

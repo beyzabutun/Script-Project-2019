@@ -3,11 +3,14 @@
 {% load static %}
   <head>
     <meta charset="utf-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{%static 'css/base.css'%}">
 
     <title>
         {% block title %}
         {% endblock %}
     </title>
+
 
     {%block head%}
     {%endblock%}
@@ -27,25 +30,68 @@
       <link href="https://fonts.googleapis.com/css?family=Indie+Flower&display=swap" rel="stylesheet">
          <link href="https://fonts.googleapis.com/css?family=Courgette&display=swap" rel="stylesheet">
         <link href="https://cdn.materialdesignicons.com/4.7.95/css/materialdesignicons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css?family=Lora:700i&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:900&display=swap" rel="stylesheet">
   </head>
 
   <body>
 
 
-      <nav class="navbar navbar-expand-lg navbar-light " style="height: 5vh; background-color: #c65221;font-family: 'Lora', serif;">
-          <a class="navbar-brand" href="{% url 'index' %}" style="color: #ffffff"> Social Network for book and media sharing </a>
+      <nav class="navbar navbar-expand-lg navbar-light " id="navigation-bar" >
+      {% if user.is_authenticated %}
+          <a class="navbar-brand" href="{% url 'index' %}">{{user.first_name|capfirst}} {{user.last_name|capfirst}}</a>
+
+      {% else %}
+          <a class="navbar-brand" href="{% url 'index' %}" > Online Book and Media Sharing </a>
+      {% endif %}
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
 
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto" >
+{#                #}
+                {% if user.is_authenticated %}
+
+              <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Actions
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="{% url 'social_network_app:users' request.user.pk %}" >
+                                My Items
+                            </a>
+                        <a class="dropdown-item" href="{% url 'social_network_app:friendships'  %}" >
+                                Friends
+                            </a>
+                        <a class="dropdown-item" href="{% url 'social_network_app:borrow_requests' %}" >
+                                Borrows & Requests
+                            </a>
+                        <a class="dropdown-item" href="{% url 'social_network_app:all_items' %}" >
+                                All Items
+                            </a>
+                        <a class="dropdown-item" href="{% url 'social_network_app:all_users' %}" >
+                                All Users
+                            </a>
+                        <a class="dropdown-item" href="{% url 'social_network_app:notifications' %}" >
+                                Notifications
+                            </a>
+                        <a class="dropdown-item" href="{% url 'social_network_app:announcements' %}" >
+                                Announcements
+                            </a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Change Password</a>
+                    </div>
+              </li>
+
+                  {%endif%}
+
+            </ul>
             <ul class="navbar-nav ml-auto" >
 {#                #}
                 {% if user.is_authenticated %}
-                        dfsfs
-                      <li class="nav-item">
-                        <a href="{%url 'social_network_app:logout' %}"  >
+
+                  <li class="nav-item">
+                        <a class="nav-link" href="{%url 'social_network_app:logout' %}"  >
                             <span class="mdi mdi-logout"></span> Logout</a>
                       </li>
                   {%else%}
@@ -71,66 +117,16 @@
     {#####################################}
 
    {%if user.is_authenticated%}
+    <div class="bg">
+            <div class="container-fluid ">
+            {# #################### #}
 
-        <div class="container-fluid ">
-            <nav class="col-md-2 d-none d-md-block bg-light sidebar" style="width: auto">
-              <div class="sidebar-sticky" >
-                <ul class="nav flex-column">
 
-                    <li class="nav-item">
-{#                        <a class="nav-link" href="{% url 'social_network_app:edit_profile'  %}">#}
-                            <h4>{{user.first_name|capfirst}} {{user.last_name|capfirst}}</h4>
-{#                        </a>#}
-                    </li>
-
-                    <li class="nav-item">
-                        <a href="{% url 'social_network_app:users' request.user.pk %}" >
-                            My Items
-                        </a>
-                    </li>
-
-                    <li class="nav-item" >
-                        <a href="{% url 'social_network_app:friendships' %}" >
-                            Friends
-                        </a>
-                    </li>
-                    <li class="nav-item" >
-                        <a href="{% url 'social_network_app:borrow_requests' %}" >
-                            Borrows & Requests
-                        </a>
-                    </li>
-                    <li class="nav-item" >
-                        <a href="{% url 'social_network_app:all_items' %}" >
-                            All Items
-                        </a>
-                    </li>
-                    <li class="nav-item" >
-                        <a href="{% url 'social_network_app:all_users' %}" >
-                            All Users
-                        </a>
-                    </li>
-                    <li class="nav-item" >
-                        <a href="{% url 'social_network_app:notifications' %}" >
-                            Notifications
-                        </a>
-                    </li>
-                    <li class="nav-item" >
-                        <a href="{% url 'social_network_app:announcements' %}" >
-                            Announcements
-                        </a>
-                    </li>
-                </ul>
-              </div>
-            </nav>
-
-            <div class="col-sm-10 ">
-
-                    {% block block_for_authenticated_users%}
-                    {%endblock%}
+                        {% block block_for_authenticated_users%}
+                        {%endblock%}
 
             </div>
-        </div>
-
+    </div>
   {% else %}
         {%block block_for_unauthenticated_users %}
         {% endblock %}
