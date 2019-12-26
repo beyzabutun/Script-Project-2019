@@ -16,6 +16,8 @@
           integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
           crossorigin="anonymous"></script>
          <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+
         <link rel="stylesheet" href="{% static 'css/base.css' %}">
         <link rel="shortcut icon" type="image/x-icon" href="{%static 'images/download.png'%}"/>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -40,10 +42,13 @@
                             <span class="glyphicon glyphicon-log-out" ></span> Logout</a>
                       </li>
                   {%else%}
-                      asdas
                       <li >
                           <a href="{% url 'social_network_app:register' %}" >
                       <span class="glyphicon glyphicon-user" ></span> Sign Up</a>
+                    </li>
+                      <li >
+                          <a href="{% url 'social_network_app:verification' %}" >
+                      <span class="glyphicon glyphicon-user" ></span> Verify your account </a>
                     </li>
                       <li>
                         <a href="{%url 'social_network_app:login' %}" ><span class="glyphicon glyphicon-log-in" ></span> Sign In</a>
@@ -67,7 +72,7 @@
                     </li>
 
                     <li class="nav-item">
-                        <a href="{% url 'social_network_app:user_items_list' request.user.pk %}" >
+                        <a href="{% url 'social_network_app:users' request.user.pk %}" >
                             My Items
                         </a>
                     </li>
@@ -90,6 +95,16 @@
                     <li class="nav-item" >
                         <a href="{% url 'social_network_app:all_users' %}" >
                             All Users
+                        </a>
+                    </li>
+                    <li class="nav-item" >
+                        <a href="{% url 'social_network_app:notifications' %}" >
+                            Notifications
+                        </a>
+                    </li>
+                    <li class="nav-item" >
+                        <a href="{% url 'social_network_app:announcements' %}" >
+                            Announcements
                         </a>
                     </li>
                 </ul>

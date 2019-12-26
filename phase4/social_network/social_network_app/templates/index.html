@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block block_for_authenticated_users %}
+
+    <h2>{{ user.first_name|capfirst}} {{ user.last_name|capfirst}}</h2>
+    <br>
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <hr><br>
+     <form action="" method="post">
+             {% csrf_token %}
+         <label for="old_pass"> Old Password</label>
+            <input type="password" name="old_password" id="old_pass" >
+         <label for="new_pass"> New Password</label>
+            <input type="password" name="new_password"  id="new_pass">
+            <button type="submit" name="submit_type" value="change_password" class="btn btn-warning"> Change Password </button>
+
+    </form>
+{% endblock %}
+
+{% block block_for_unauthenticated_users %}
+        <div id="carouselExampleIndicators"  data-ride="carousel" style="background: url('/media/book.jpg'); background-position: top; background-size: cover;">
+
+              <img src="/media/book.jpg" class="d-block w-100" style="height: 95vh;" alt="...">
+
+
+        </div>
+    <h1 style="position: absolute; color: #ffffff;
+    top:  50%;
+    left: 50%;
+    transform: translate(-50%,-50%);font-family: 'Lora', serif;"> WELCOME TO YOUR SOCIAL NETWORK! </h1>
+{% endblock %}
