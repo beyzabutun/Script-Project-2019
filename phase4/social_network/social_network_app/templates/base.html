@@ -31,6 +31,55 @@
          <link href="https://fonts.googleapis.com/css?family=Courgette&display=swap" rel="stylesheet">
         <link href="https://cdn.materialdesignicons.com/4.7.95/css/materialdesignicons.min.css" rel="stylesheet">
       <link href="https://fonts.googleapis.com/css?family=Roboto:900&display=swap" rel="stylesheet">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+
+      <script>
+        var announceSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/announcement/' );
+
+        announceSocket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            var announcement_id = data['announcement_id'];
+            {#document.querySelector('#chat-log').value += (message + '\n');#}
+            console.log("Mesaj alındıııı; ",data );
+            $.ajax({
+                type: 'get',
+                url: "{% url 'social_network_app:see-announcement'  %}",
+                data: {
+                    'announcement_id': announcement_id,
+                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+                },
+                success: function (response) {
+                    {#$('#row'+player_id).remove();#}
+                    console.log(response);
+                    if (response['message'] != "") {
+
+                        $('#notifications').text(response['message'])
+                            .css({
+                                position: "fixed", bottom: "5px",
+                                right: "5px", padding: "15px", "border-radius": "8px",
+                                "box-shadow": "4px 4px 2px #808080", 'background-color': "#ffa0a0"
+                            })
+                            .fadeIn().delay(3000).slideUp();
+                    }
+
+                },
+                error: function (data) {
+                  alert("error ");
+                },
+            });
+        };
+
+        announceSocket.onclose = function(e) {
+            console.error('Announcement socket closed unexpectedly');
+        };
+
+      </script>
+
+
+
   </head>
 
   <body>
@@ -126,6 +175,7 @@
                         {%endblock%}
 
             </div>
+            <div id="notifications"></div>
     </div>
   {% else %}
         {%block block_for_unauthenticated_users %}

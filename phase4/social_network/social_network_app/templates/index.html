@@ -5,7 +5,6 @@
     <link rel="stylesheet" href="{%static 'css/form.css'%}">
 {% endblock %}
 {% block block_for_authenticated_users %}
-        <h2>{{ user.first_name|capfirst}} {{ user.last_name|capfirst}}</h2>
         <br>
             {% if messages %}
               <ul class="messages">
@@ -14,7 +13,7 @@
                 {% endfor %}
               </ul>
             {% endif %}
-        <hr><br>
+
     <div class="container">
         <div class="item">
         <div class="flex-form">

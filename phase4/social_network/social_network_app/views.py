@@ -535,3 +535,20 @@ class AnnouncementsView(View):
     def post(self, request):
         return render(request, 'announcements.html', {})
 
+
+
+def see_announcement(request):
+    ann_id = request.GET['announcement_id']
+    ann = Announcement.objects.get(id=ann_id)
+    try:
+        Friend.objects.get(((Q(sender_user=ann.item.owner) & Q(receiver_user=request.user)) | (
+                    Q(sender_user=request.user) & Q(receiver_user=ann.item.owner))) &
+                           (~Q(state=0) & Q(state__lte=ann.friend_state)))
+    except:
+        return  JsonResponse({'message': ''})
+
+    message = f"{ann.item.owner.first_name} {ann.item.owner.last_name} made an announcement for {ann.item.title}: {ann.msg}"
+    return JsonResponse({
+        'message': message,
+    })
+

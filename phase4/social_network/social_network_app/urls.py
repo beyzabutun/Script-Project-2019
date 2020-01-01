@@ -1,5 +1,6 @@
 from django.urls import path
 from social_network_app import views
+from django.conf.urls import url
 
 app_name = 'social_network_app'
 urlpatterns = [
@@ -15,4 +16,8 @@ urlpatterns = [
     path('notifications/', views.NotificationsView.as_view(), name='notifications'),
     path('announcements/', views.AnnouncementsView.as_view(), name='announcements'),
     path('item/<int:item_id>/', views.ItemView.as_view(), name='item'),
+
+    #     for AJAX calls
+    url(r'^see_announcement/$', views.see_announcement, name='see-announcement'),
+
 ]

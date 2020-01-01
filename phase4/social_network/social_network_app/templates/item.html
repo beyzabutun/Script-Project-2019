@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 
 {% load extras %}
+
+{% block head %}
+    <script>
+        function make_announcement() {
+            var states = $("#ann_states").val();
+            var msg = $("#ann_msg").val();
+            var item_id = {{ item.id }};
+            announceSocket.send(JSON.stringify({'item_id': item_id , 'states': states,'msg': msg}));
+            $("#ann_msg").val('');
+        }
+    </script>
+{% endblock %}
 {% block block_for_authenticated_users %}
     <div style="margin: 10px 120px 10px 120px;">
         {% if messages %}
@@ -142,20 +154,20 @@
             <br><br><br><br>
             <hr>
          <h3> Make announcement </h3>
-              <form action="/item/{{ item.id }}/" method="post">
+              <form  method="post" enctype="multipart/form-data" name="announcement_form">
                      {% csrf_token %}
 
                      <div class="col-md-5" style="margin-bottom: 30px;">
                         <label for="states"></label>
-                        <select name='states' class="form-control" id="states" >
+                        <select name='states' class="form-control" id="ann_states" >
                           <option value="1" >Close Friend</option>
                           <option value="2">Friend</option>
                         </select>
                      </div>
 
-                  <textarea  name="msg" class="form-control" rows="3" required style="margin-left: 15px; "></textarea>
-                     <button type="submit" name="submit_type" value="make_announcement" class="btn btn-warning" style="margin-bottom: -50px; margin-left: 15px;"> Submit </button>
-
+                  <textarea  name="msg" class="form-control" rows="3" id="ann_msg" required style="margin-left: 15px; "></textarea>
+{#                     <button  name="submit_type" value="make_announcement" class="btn btn-warning" onclick="make_announcement();" style="margin-bottom: -50px; margin-left: 15px;"> Submit </button>#}
+                    <input  type="button" id="submit_type" value="make_announcement" onclick="make_announcement();" style="margin-bottom: -50px; margin-left: 15px;"/>
                 </form>
 
 
