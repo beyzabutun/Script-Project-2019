@@ -552,3 +552,15 @@ def see_announcement(request):
         'message': message,
     })
 
+def see_notification(request):
+    notification_id = request.GET['notification_id']
+    notification = Notification.objects.get(id=notification_id)
+    message = notification.text
+    if request.user == notification.receiver_user:
+        return JsonResponse({
+            'message': message,
+        })
+    else:
+        return  JsonResponse({'message': ''})
+
+

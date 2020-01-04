@@ -19,5 +19,5 @@ urlpatterns = [
 
     #     for AJAX calls
     url(r'^see_announcement/$', views.see_announcement, name='see-announcement'),
-
+    url(r'^see_notification/$', views.see_notification, name='see-notification'),
 ]

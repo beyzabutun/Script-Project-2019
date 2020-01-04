@@ -7,6 +7,10 @@ register = template.Library()
 
 @register.simple_tag
 def get_state_type(item, attr):
+    print('asdasdasd',item)
+    print('asdasdasd',attr)
+    if isinstance(item, str):
+        item = Item.objects.get(pk=int(item))
     return STATE_TYPE[item.__getattribute__(attr)]
 
 

@@ -11,8 +11,22 @@
             announceSocket.send(JSON.stringify({'item_id': item_id , 'states': states,'msg': msg}));
             $("#ann_msg").val('');
         }
+
+        function make_notification() {
+            console.log("HEEEEEEEE");
+            var state_names = $("#state_names").val();
+            var states = $("#states").val();
+            var item_id = {{ item.id }};
+            notificationSocket.send(JSON.stringify({'item_id':item_id,'states': states,'state_names': state_names}));
+
+            var state_types =  ['CLOSED', 'CLOSEFRIENDS', 'FRIENDS', 'EVERYONE'];
+            var state_name = state_types[parseInt(states)];
+            $('#table_'+state_names).text(state_name);
+         }
+
     </script>
 {% endblock %}
+
 {% block block_for_authenticated_users %}
     <div style="margin: 10px 120px 10px 120px;">
         {% if messages %}
@@ -91,11 +105,11 @@
                 {% endif %}
                 <td> {% get_rating item %}</td>
                 {%  if item.owner == request.user %}
-                    <td>{% get_state_type item 'view' %} </td>
-                    <td>{% get_state_type item 'detail' %}</td>
-                    <td>{% get_state_type item 'borrow' %}</td>
-                    <td>{% get_state_type item 'search' %}</td>
-                    <td>{% get_state_type item 'comment' %}</td>
+                    <td id="table_view">{% get_state_type item 'view' %} </td>
+                    <td id="table_detail">{% get_state_type item 'detail' %}</td>
+                    <td id="table_borrow">{% get_state_type item 'borrow' %}</td>
+                    <td id="table_search">{% get_state_type item 'search' %}</td>
+                    <td id="table_comment">{% get_state_type item 'comment' %}</td>
               {% endif %}
 
                 </tr>
@@ -127,7 +141,7 @@
             <hr>
         <h3>Change state of the item</h3>
 
-             <form action="/item/{{ item.id }}/" method="post">
+             <form method="post" >
                      {% csrf_token %}
                      <div class="col-sm-5" >
                          <label for="state_names"></label>
@@ -148,7 +162,7 @@
                           <option value="3">Everyone</option>
                         </select>
                      </div>
-                     <button type="submit" name="submit_type" value="set_state" class="btn btn-warning" style="margin-bottom: -50px;"> Change </button>
+                     <button type="button" name="submit_type" value="make_notification" onclick="make_notification();" class="btn btn-warning" style="margin-bottom: -50px;"> Change </button>
 
                 </form>
             <br><br><br><br>
