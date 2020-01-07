@@ -6,7 +6,6 @@
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <script>
-
     function load_unload_div(div_id) {
 
         var expanded_div = document.getElementById(div_id);
@@ -14,6 +13,31 @@
             expanded_div.style.display = "block" ;
         else
             expanded_div.style.display = "none";
+    }
+    function delete_item(item_id) {
+        notificationSocket.send(JSON.stringify({'func_name': 'delete_item','item': item_id}));
+        $("#row_"+item_id).remove();
+    }
+    function make_add_item_notification() {
+            var type = $("#type").val();
+            var title = $("#title").val();
+            var isbn = $("#isbn").val();
+            var artist = $("#artist").val();
+            var genre = $("#genre").val();
+            var year = $("#year").val();
+            var location = $("#location").val();
+            var view = $("#view").val();
+            var detail = $("#detail").val();
+            var borrow = $("#borrow").val();
+            var comment = $("#comment").val();
+            var search = $("#search").val();
+            var user_id = {{ user.id }};
+            notificationSocket.send(JSON.stringify({'func_name': 'add_item','user_id':user_id,'type': type,'title': title, 'isbn': isbn, 'artist': artist,
+                                        'genre': genre, 'year': year, 'location': location, 'view': view, 'detail': detail,
+                                        'borrow': borrow, 'comment': comment, 'search': search}));
+
+            window.location.reload(false);
+
     }
 
 </script>
@@ -57,7 +81,7 @@
         </thead>
         <tbody>
         {% for item in location_available_items %}
-            <tr>
+            <tr id="row_{{ item.id }}">
                 <td><a href="/item/{{ item.id }}/">{{ item.title}}</a></td>
                 <td>{{ item.type }}</td>
                 <td>{{ item.genre }}</td>
@@ -97,10 +121,10 @@
                     <td>{% get_state_type item 'comment' %}</td>
                     <td> <button id="{{ item.id }}" onclick="load_unload_div('borrow_requests_div{{ item.id }}');" class="btn btn-warning"> See </button>
                     <td>
-                        <form action="/users/{{ request.user.pk }}/" method="post">
+                        <form  method="post">
                              {% csrf_token %}
-                            <input type="text" name="item_id" value="{{ item.id }}" hidden>
-                            <button type="submit" name="submit_type" value="delete" class="btn btn-danger" style="padding-top: 3px;padding-bottom: 2px;">
+{#                            <input type="text" name="item_id" value="{{ item.id }}" hidden>#}
+                            <button type="button"  value="delete_item" onclick="delete_item('{{ item.id }}');" class="btn btn-danger" style="padding-top: 3px;padding-bottom: 2px;">
                                 <i class="material-icons">delete_forever</i> </button>
 
                         </form>
@@ -182,7 +206,7 @@
         <h4>ADD NEW ITEM </h4>
         <hr>
                    <div class="form-group " >
-                     <form action="/users/{{ request.user.pk }}/" method="post">
+                     <form  method="post">
                          {% csrf_token %}
                              <input type="text" name="type" id="type" placeholder="Type">
 
@@ -273,7 +297,7 @@
                             </select>
                          </div>
                          <div class="col-sm-12">
-                             <button type="submit" name="submit_type" value="save" class="btn btn-warning"> Save </button>
+                             <button type="button"  value="save" onclick="make_add_item_notification();" class="btn btn-warning"> Save </button>
                          </div>
                              </div>
 

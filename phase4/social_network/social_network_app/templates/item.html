@@ -17,17 +17,36 @@
             var state_names = $("#state_names").val();
             var states = $("#states").val();
             var item_id = {{ item.id }};
-            notificationSocket.send(JSON.stringify({'item_id':item_id,'states': states,'state_names': state_names}));
+            notificationSocket.send(JSON.stringify({'func_name':'set_state', 'item_id':item_id,'states': states,'state_names': state_names}));
 
-            var state_types =  ['CLOSED', 'CLOSEFRIENDS', 'FRIENDS', 'EVERYONE'];
+            var state_types =  ['CLOSED', 'CLOSEFRIEND', 'FRIEND', 'EVERYONE'];
             var state_name = state_types[parseInt(states)];
             $('#table_'+state_names).text(state_name);
          }
+
+         function make_comment() {
+            var comment_text = $("#comment_text_id").val();
+            var user_id = {{ request.user.id }};
+            var item_id = {{ item.id }};
+            notificationSocket.send(JSON.stringify({'func_name': 'make_comment', 'user_id': user_id, 'item_id':item_id, 'comment_text': comment_text}));
+            document.getElementById("comments").innerHTML += "<div class=\"card border-blue\" id=\"comment_cards\" >\n" +
+                "                <div class=\"card-header\">\n" +
+                "                    <div class=\"col-md-9 \" style=\"margin-bottom: -20px; padding-top: 10px;\" ><b>{{ request.user.first_name }} {{ request.user.last_name }}</b></div>\n" +
+                "                    <div class=\"col-md-3 mb-2 text-muted\" style=\"text-align: right;float: right;\">{% now "M, d, Y, f a" %}</div>\n" +
+                "                </div>\n" +
+                "              <div class=\"card-body\">\n" +
+                "                <p id=\"card_text\">"+ comment_text +"</p>\n" +
+                "              </div>\n" +
+                "            </div>\n" +
+                "            <br>";
+            $("#comment_text_id").val("");
+        }
 
     </script>
 {% endblock %}
 
 {% block block_for_authenticated_users %}
+
     <div style="margin: 10px 120px 10px 120px;">
         {% if messages %}
           <ul class="messages">
@@ -212,29 +231,31 @@
         {% endif %}
         <br>
 
-        {% for comment in comments %}
+
         <div id="comments">
+            {% for comment in comments %}
             <div class="card border-blue" id="comment_cards" >
                 <div class="card-header">
-                    <div class="col-md-9 "><b>{{ comment.user.first_name }} {{ comment.user.last_name }}</b></div>
-                    <div class="col-md-3 mb-2 text-muted" style="text-align: right;">{{ comment.date }}</div>
+                    <div class="col-md-9 " style="margin-bottom: -20px; padding-top: 10px;"><b>{{ comment.user.first_name }} {{ comment.user.last_name }}</b></div>
+                    <div class="col-md-3 mb-2 text-muted" style="text-align: right;float: right;">{{ comment.date }}</div>
                 </div>
               <div class="card-body">
                 <p id="card_text">{{ comment.text }}</p>
               </div>
             </div>
             <br>
-        </div>
+
         {% endfor %}
+        </div>
         {% check_comment_permission request.user item as comment_permission %}
         {% if comment_permission %}
 
             <div class="container-fluid"  id="form_comment"  >
-                <form method="post" action="/item/{{ item.id }}/" name="comment_form">
+                <form method="post" >
                     {% csrf_token %}
                     <label for="textarea"></label>
-                    <textarea  name="comment_text" class="form-control" id="text_area_id" rows="4" required  ></textarea>
-                      <button type="submit" value="save_comment" name="submit_type"  class="btn btn-warning" style="margin-top: 10px;">Comment</button>
+                    <textarea  name="comment_text" class="form-control" id="comment_text_id" rows="4" required  ></textarea>
+                      <button type="button" value="make_comment" onclick="make_comment();" class="btn btn-warning" style="margin-top: 10px;">Comment</button>
                 </form>
             </div>
         {% endif %}

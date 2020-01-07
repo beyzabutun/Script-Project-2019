@@ -20,11 +20,16 @@ STATE_TYPE = {
 }
 
 
+class Profile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    verification_code = models.CharField(max_length=150)
+
+
 class Item(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     type = models.CharField(max_length=150)
     title = models.CharField(max_length=150)
-    isbn = models.IntegerField(null=True, blank=True, unique=True)
+    isbn = models.IntegerField(null=True, blank=True)
     artist = models.CharField(max_length=256)
     genre = models.CharField(max_length=150)
     year = models.IntegerField()
@@ -87,7 +92,7 @@ class BorrowRequest(models.Model):
 class Notification(models.Model):
     sender_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender_user')
     receiver_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver_user')
-    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True)
     text = models.TextField()
     date = models.DateTimeField()
 

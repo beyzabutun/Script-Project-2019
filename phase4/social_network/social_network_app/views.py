@@ -13,6 +13,7 @@ from secrets import token_hex
 from django.contrib import messages
 import string
 from random import *
+from django.core.mail import send_mail
 
 user_verification_dict = {}
 
@@ -63,9 +64,17 @@ class RegisterView(View):
             user.save()
             characters = string.ascii_letters + string.punctuation + string.digits
             generated_password = token_hex(16)
-            user_verification_dict[user] = generated_password
+            # user_verification_dict[user] = generated_password
+            profile = Profile.objects.create(user=user, verification_code=generated_password)
+            send_mail(
+                'Social Network Verification Code',
+                "Your verification code is " + generated_password,
+                'besteburhan7@gmail.com',
+                [user.email, ],
+                fail_silently=False,
+            )
             print("You registered successfully. Please use the verification number to log-in. Verification number: ", generated_password)
-            return HttpResponseRedirect(reverse('social_network_app:login'))
+            return HttpResponseRedirect(reverse('social_network_app:verification'))
         else:
             print(self.user_form.errors)
             return render(request, 'register.html', {'user_form': self.user_form})
@@ -110,7 +119,7 @@ class VerificationView(View):
 
         except:
             return HttpResponse("invalid verification details")
-        if user_verification_dict[usr] == request.POST['verification'] and usr.check_password(request.POST['password']):
+        if usr.profile_set.get().verification_code == request.POST['verification'] and usr.check_password(request.POST['password']):
             usr.is_active = 1
             usr.save()
             return redirect('/login/')

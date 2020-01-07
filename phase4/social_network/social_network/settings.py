@@ -33,8 +33,9 @@ ALLOWED_HOSTS = []
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'besteburhan7@gmail.com'
-EMAIL_HOST_PASSWORD = 'kwuuxyewlrcdbucj'
+EMAIL_HOST_PASSWORD = 'rlhyfsovjqlszymp'
 EMAIL_PORT = 587
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Application definition
 
@@ -96,18 +97,18 @@ CHANNEL_LAYERS = {
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'mydatabase',
-    }
     # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'social_network_db',
-    #     'HOST': '127.0.0.1',
-    #     'PORT': '3306',
-    #     'USER': 'root',
-    #     'PASSWORD': 'somehow-8451',
+    #         'ENGINE': 'django.db.backends.sqlite3',
+    #         'NAME': 'mydatabase',
     # }
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'social_network_db',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'USER': 'root',
+        'PASSWORD': 'somehow-8451',
+    }
 }
 
 
@@ -135,7 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Istanbul'
 
 USE_I18N = True
 
